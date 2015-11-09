@@ -4,6 +4,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
 import re
+from bs4 import BeautifulSoup
 import logging
 
 ## LOGGING to file
@@ -46,7 +47,7 @@ class ForumsSpider(CrawlSpider):
         
         topic = response.xpath('//h1/text()').extract_first()
         url = response.url
-        condition="ADHD"
+        condition="adhd"
         item = PostItemsList()
         item['author'] = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[contains(@href,"profile")]/text()').extract_first()
         item['author_link'] = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[contains(@href,"profile")]/@href').extract_first()

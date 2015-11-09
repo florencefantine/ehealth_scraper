@@ -4,6 +4,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
 import re
+from bs4 import BeautifulSoup
 import logging
 
 ## LOGGING to file
@@ -37,6 +38,12 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePostsList(self,response):
@@ -53,11 +60,16 @@ class ForumsSpider(CrawlSpider):
         item['condition'] = condition
         item['create_date'] = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[@class="nolink"][2]/text()').extract_first().replace('on','').replace('in','').strip()
         
-        item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
-        if not item['post']:
-            item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+        message = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()
+        if not message:
+            message = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract()
+        item['post'] = self.cleanText(message)
 
-        item['tag']='epilepsy'
+        # item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+        # if not item['post']:
+        #     item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+
+        item['tag']=''
         item['topic'] = topic
         item['url']=url
         logging.info(item.__str__)
@@ -68,10 +80,16 @@ class ForumsSpider(CrawlSpider):
             item['author'] = post.xpath('./dt[@class="byline"]/a[contains(@href,"user")]/text()').extract_first()
             item['author_link'] = post.xpath('./dt[@class="byline"]/a[contains(@href,"user")]/@href').extract_first()
             item['create_date'] = post.xpath('./dt[@class="byline"]/span[@class="timestamp"]/text()').extract_first()
-            item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
 
-            if not item['post']:
-                item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+            message = post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()
+            if not message:
+                message  = post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract()
+            item['post'] = self.cleanText(message)
+
+            # item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+
+            # if not item['post']:
+            #     item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
 
             item['tag']='epilepsy'
             item['topic'] = topic

@@ -4,6 +4,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
 import re
+from bs4 import BeautifulSoup
 import logging
 
 ## LOGGING to file
@@ -38,6 +39,12 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePostsList(self,response):
@@ -53,7 +60,9 @@ class ForumsSpider(CrawlSpider):
             item['author_link']=post.css('.vt_asked_by_user').xpath("./a").xpath("@href").extract()[0]
             item['condition']=condition
             item['create_date']= post.css('.vt_first_timestamp').xpath('text()').extract().extend(response.css('.vt_reply_timestamp').xpath('text()').extract())
-            item['post'] = re.sub('\s+',' '," ".join(post.css('.vt_post_body').xpath('text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+            message = post.css('.vt_post_body').xpath('text()').extract()
+            item['post'] = self.cleanText(message)
+            # item['post'] = re.sub('\s+',' '," ".join(post.css('.vt_post_body').xpath('text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
             item['tag']='epilepsy'
             item['topic'] = topic
             item['url']=url

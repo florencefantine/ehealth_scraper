@@ -26,7 +26,7 @@ class ForumsSpider(CrawlSpider):
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.dailystrength.org/c/Renal-Cell-Carcinoma-Kidney-Cancer/support-group",
+        "http://www.dailystrength.org/c/Multiple-Sclerosis-MS/support-group",
     ]
 
     rules = (
@@ -43,6 +43,12 @@ class ForumsSpider(CrawlSpider):
             #     restrict_xpaths='//*[@id="col1"]/div[2]/div[2]/div[1]/table/tr[3]/td[1]/a[1]/@href',
             # ), follow=True),
         )
+
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
@@ -61,8 +67,8 @@ class ForumsSpider(CrawlSpider):
         item['condition']=condition
         item['create_date']= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.css('.discussion_text').xpath('./span/text()').extract()[0]).strip()
         post_msg=post.css('.discussion_text').extract()[0]
-        soup = BeautifulSoup(post_msg, 'html.parser')
-        post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+        # soup = BeautifulSoup(post_msg, 'html.parser')
+        # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
         item['tag']='epilepsy'
         item['topic'] = topic

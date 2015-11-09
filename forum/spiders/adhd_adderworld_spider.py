@@ -3,12 +3,12 @@ from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
-import re
 import logging
 
 import lxml.html
 from lxml.etree import ParserError
 from lxml.cssselect import CSSSelector
+import re
 from bs4 import BeautifulSoup
 import urlparse
 
@@ -73,7 +73,7 @@ class ForumsSpider(CrawlSpider):
         items = []
         topic = self.cleanText(response.xpath('//h1/text()').extract_first())
         url = response.url
-        condition = "ADHD"
+        condition = "adhd"
         
         item = PostItemsList()
         item['author'] = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[contains(@href,"profile")]/text()').extract_first()

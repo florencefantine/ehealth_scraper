@@ -53,6 +53,12 @@ class ForumsSpider(CrawlSpider):
             ), callback='parsePost')
         )
 
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePost(self,response):
@@ -70,9 +76,9 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             item['create_date']= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.xpath('./tr[1]/td[3]/div/text()').extract()[1]).strip()
             post_msg=post.css('.postedText').xpath('text()').extract()[0]
-            soup = BeautifulSoup(post_msg, 'html.parser')
-            post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
-            item['post']=post_msg
+            # soup = BeautifulSoup(post_msg, 'html.parser')
+            # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['post']=self.cleanText(post_msg)
             item['tag']=condition
             item['topic'] = topic
             item['url']=url

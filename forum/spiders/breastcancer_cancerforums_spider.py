@@ -57,7 +57,7 @@ class CancerForum(CrawlSpider):
                 item['condition'] = condition
                 item['create_date'] = create_date
                 item['post'] = message
-                item['tag'] = 'epilepsy'
+                item['tag'] = ''
                 item['topic'] = subject
                 item['url'] = url
 

@@ -71,7 +71,7 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
             item['author_link'] = '*'
             item['condition'] = condition
             item['create_date'] = date
-            item['post'] = message
+            item['post'] = self.cleanText(message)
             item['tag'] = 'epilepsy'
             item['topic'] = subject
             item['url'] = url
