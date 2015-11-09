@@ -1,0 +1,6 @@
+ghostdriver.log
+.scrapy
+*.pyc
+.project
+.pydevproject
+.settings
