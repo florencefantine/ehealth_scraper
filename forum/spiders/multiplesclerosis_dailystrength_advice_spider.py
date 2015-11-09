@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "renal.cell.carcinoma_dailystrength_spider"
+    name = "multiplesclerosis_dailystrength_advice_spider"
     allowed_domains = ["dailystrength.org"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
@@ -81,7 +81,7 @@ class ForumsSpider(CrawlSpider):
             soup = BeautifulSoup(post_msg, 'html.parser')
             post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['post']=post_msg
-            item['tag']='epilepsy'
+            item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(post_msg)

@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "renal.cell.carcinoma_cancercompass_spider"
-    allowed_domains = ["cancercompass.com"]
+    name = "renalcellcarcinoma_cancerorg_spider"
+    allowed_domains = ["cancer.org"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.cancercompass.com/message-board/cancers/renal-cell-cancer/1,0,119,131.htm?sortby=replies&dir=1",
+        "http://csn.cancer.org/forum/142",
     ]
 
     rules = (
@@ -34,19 +34,27 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//table[contains(@class, "mbDis")]//a[contains(@class, "subLink")]',
+                restrict_xpaths='//tr[contains(@class, "odd")]//td[contains(@class, "title")]',
+                canonicalize=True,
+                ), callback='parsePost', follow=True),
+
+            Rule(LinkExtractor(
+                restrict_xpaths='//tr[contains(@class, "even")]//td[contains(@class, "title")]',
                 canonicalize=True,
                 ), callback='parsePost', follow=True),
 
             # Rule to follow arrow to next product grid
-            # Rule(LinkExtractor(
-            #     restrict_xpaths='//*[@id="MainContent_ContentPlaceHolder1_discussionList_dtpDis"]',
-            #     canonicalize=True,
-            #     #allow='http://www.cancerforums.net/threads/',
-            # ), follow=True),
             Rule(LinkExtractor(
-                restrict_xpaths='//*[@id="MainContent_ContentPlaceHolder1_messageList1_pnlTopPager"]',
+                restrict_xpaths='//li[contains(@class, "pager-item")]',
                 canonicalize=True,
+                deny='http://csn.cancer.org/node/',
+                #allow='http://www.cancerforums.net/threads/',
+            ), follow=True),
+
+            Rule(LinkExtractor(
+                restrict_xpaths='//li[contains(@class, "pager-item")]',
+                canonicalize=True,
+                deny='http://csn.cancer.org/forum/'
                 #allow='http://www.cancerforums.net/threads/',
             ), callback='parsePost', follow=True),
         )
@@ -56,20 +64,21 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        posts = sel.css('.mbpost')
-        items = []
-        topic = sel.css('.contentText').xpath('./h1/text()').extract()[0].strip()
-        url = response.url
+        posts = sel.xpath('//*[@id="comments"]').css('.comment-forum')
         condition="Renal Cell Carcinoma"
+        items = []
+        topic = sel.xpath('//*[@id="squeeze"]/div/div/h2/text()').extract()[0].strip()
+        url = response.url
+
         for post in posts:
-            if len(post.xpath('./div[1]/p/a'))==0:
+            if len(post.css('.author'))==0:
                 continue
             item = PostItemsList()
-            item['author'] = self.parseText(str=post.xpath('./div[1]/p/a').extract()[0].strip())
-            item['author_link']=response.urljoin(post.xpath('./div[1]/p/a/@href').extract()[0])
+            item['author'] = self.parseText(str=post.css('.author').extract()[0].strip())
+            item['author_link']=''
             item['condition']=condition
-            item['create_date'] = self.parseText(str=post.xpath('./div[2]/div[1]/p/text()').extract()[1].strip()[2:])
-            post_msg=self.parseText(str=post.css('.msgContent').extract()[0])
+            item['create_date'] = self.parseText(str=post.css('.date').extract()[0].strip()[2:])
+            post_msg=self.parseText(str=post.css('.content').extract()[0])
             item['post']=post_msg
             item['tag']=''
             item['topic'] = topic

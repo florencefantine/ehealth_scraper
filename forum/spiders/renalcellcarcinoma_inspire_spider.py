@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "carcinoid.cancer_inspire_spider"
+    name = "renalcellcarcinoma_inspire_spider"
     allowed_domains = ["inspire.com"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "https://www.inspire.com/groups/american-lung-association-lung-cancer-survivors/",
+        "https://www.inspire.com/groups/kidney-cancer-association/?msg_activity=CHECK_EMAIL_TO_ACTIVATE",
     ]
 
     rules = (
@@ -56,16 +56,16 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        condition="Carcinoid Cancer"
         posts = sel.css('.comments-box')
         items = []
+        condition="Renal Cell Carcinoma"
         topic = sel.css('.post-title').xpath('./text()').extract()[0].strip()
         url = response.url
 
         item = PostItemsList()
         item['author'] = self.parseText(str=sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a').extract()[0].strip())
         item['author_link']=response.urljoin(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a/@href').extract()[0])
-        item['condition']=condition
+        item['condition']="Renal Cell Carcinoma"
         item['create_date'] = self.parseText(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/text()').extract()[1].split('\n')[1].strip()[1:])
         post_msg=self.parseText(str=sel.css('.content-primary-post').xpath('./div[2]/p').extract()[0])
         item['post']=post_msg

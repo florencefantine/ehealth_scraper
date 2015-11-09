@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "carcinoid.cancer_cancerforums_spider"
-    allowed_domains = ["cancerforums.net"]
+    name = "carcinoidcancer_netpatientfoundation_spider"
+    allowed_domains = ["netpatientfoundation.org"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.cancerforums.net/forums/22-Other-Cancers-Forum",
+        "http://www.netpatientfoundation.org/forum/5_1.html",
     ]
 
     rules = (
@@ -34,22 +34,23 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//h3[contains(@class, "threadtitle")]',
+                restrict_xpaths='//tr[contains(@class, "tbCel1")]/td[2]',
                 canonicalize=True,
-                ), callback='parsePost', follow=True),
+                ), callback='parsePost'),
+
+            Rule(LinkExtractor(
+                restrict_xpaths='//tr[contains(@class, "tbCel2")]/td[2]',
+                canonicalize=True,
+                ), callback='parsePost'),
 
             # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
-                restrict_xpaths='//div[contains(@class, "threadpagenav")]',
-                canonicalize=True,
-                allow='http://www.cancerforums.net/forums/',
+                restrict_xpaths='/html/body/div[3]/table[5]/tr/td/span/b/a[contains(@class, "navCell")]',
             ), follow=True),
-
+            
             Rule(LinkExtractor(
-                restrict_xpaths='//*[@id="pagination_bottom"]',
-                canonicalize=True,
-                allow='http://www.cancerforums.net/threads/',
-            ), callback='parsePost', follow=True),
+                restrict_xpaths='/html/body/div[3]/table[4]/tr/td/span/b/a[contains(@class, "navCell")]'
+            ), callback='parsePost')
         )
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
@@ -57,25 +58,22 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        posts = sel.xpath('//*[@id="posts"]/li')
-        items = []
-        topic = sel.css('.threadtitle').xpath('./a/text()').extract()[0]
+        posts = sel.xpath("//*[@id=\"allMsgs\"]").css(".forumsmb")
         condition="Carcinoid Cancer"
+        items = []
+        topic = response.xpath('//h1[contains(@class, "headingTitle")]/text()').extract()[0]
         url = response.url
         for post in posts:
             item = PostItemsList()
-            item['author'] = post.xpath('.//a[contains(@class, "username")]/strong/text()').extract()[0].strip()
-            item['author_link']=response.urljoin(post.xpath('.//a[contains(@class, "username")]/@href').extract()[0])
-            date = post.css('.postdate').extract()[0]
-            soup = BeautifulSoup(date, 'html.parser')
-            date=re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['author'] = post.css('.username').xpath("./a/text()").extract()[0]
+            item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
             item['condition']=condition
-            item['create_date']=date
-            post_msg=post.css('.postcontent').extract()[0]
+            item['create_date']= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.xpath('./tr[1]/td[3]/div/text()').extract()[1]).strip()
+            post_msg=post.css('.postedText').xpath('text()').extract()[0]
             soup = BeautifulSoup(post_msg, 'html.parser')
             post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['post']=post_msg
-            item['tag']=''
+            item['tag']=condition
             item['topic'] = topic
             item['url']=url
             logging.info(post_msg)

@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "carcinoid.cancer_dailystrength_spider"
+    name = "renalcellcarcinoma_dailystrength_spider"
     allowed_domains = ["dailystrength.org"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.dailystrength.org/c/Carcinoid-Syndrome/forum",
+        "http://www.dailystrength.org/c/Renal-Cell-Carcinoma-Kidney-Cancer/support-group",
     ]
 
     rules = (
@@ -34,22 +34,11 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "sectiontableentry2")]',
+                restrict_xpaths='//table[contains(@class, "topic_snip")]',
                 canonicalize=True,
                 deny='http://www.dailystrength.org/people/',
-                ), callback='parsePost', follow=True),
-            Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "sectiontableentry1")]',
-                deny='http://www.dailystrength.org/people/',
-                canonicalize=True,
                 ), callback='parsePost'),
 
-            # Rule to follow arrow to next product grid
-            Rule(LinkExtractor(
-                restrict_xpaths='//a[contains(@class, "medium")]',
-                deny='http://www.dailystrength.org/people/',
-                canonicalize=True,
-            ), follow=True),
             # Rule(LinkExtractor(
             #     restrict_xpaths='//*[@id="col1"]/div[2]/div[2]/div[1]/table/tr[3]/td[1]/a[1]/@href',
             # ), follow=True),
@@ -62,7 +51,7 @@ class ForumsSpider(CrawlSpider):
         sel = Selector(response)
         posts = sel.xpath('//*[@id="col1"]/div[2]/div[2]/div[1]/table[4]')
         items = []
-        condition="Carcinoid Cancer"
+        condition="Renal Cell Carcinoma"
         topic = sel.xpath('//div[contains(@class, "discussion_topic_header_subject")]/text()').extract()[0]
         url = response.url
         post = sel.xpath('//table[contains(@class, "discussion_topic")]')
@@ -75,7 +64,7 @@ class ForumsSpider(CrawlSpider):
         soup = BeautifulSoup(post_msg, 'html.parser')
         post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
-        item['tag']=condition
+        item['tag']='epilepsy'
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)
@@ -92,7 +81,7 @@ class ForumsSpider(CrawlSpider):
             soup = BeautifulSoup(post_msg, 'html.parser')
             post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['post']=post_msg
-            item['tag']='epilepsy'
+            item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(post_msg)

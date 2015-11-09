@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "renal.cell.carcinoma_healthboards_spider"
-    allowed_domains = ["healthboards.com"]
+    name = "renalcellcarcinoma_cancercompass_spider"
+    allowed_domains = ["cancercompass.com"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.healthboards.com/boards/cancer-kidney/",
+        "http://www.cancercompass.com/message-board/cancers/renal-cell-cancer/1,0,119,131.htm?sortby=replies&dir=1",
     ]
 
     rules = (
@@ -34,15 +34,20 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//*[@id="threadslist"]/tbody[2]/tr/td[3]/div[1]',
+                restrict_xpaths='//table[contains(@class, "mbDis")]//a[contains(@class, "subLink")]',
                 canonicalize=True,
                 ), callback='parsePost', follow=True),
 
             # Rule to follow arrow to next product grid
+            # Rule(LinkExtractor(
+            #     restrict_xpaths='//*[@id="MainContent_ContentPlaceHolder1_discussionList_dtpDis"]',
+            #     canonicalize=True,
+            #     #allow='http://www.cancerforums.net/threads/',
+            # ), follow=True),
             Rule(LinkExtractor(
-                restrict_xpaths='//div[contains(@class, "pagenav")]',
+                restrict_xpaths='//*[@id="MainContent_ContentPlaceHolder1_messageList1_pnlTopPager"]',
                 canonicalize=True,
-                deny='http://www.healthboards.com/boards/images/',
+                #allow='http://www.cancerforums.net/threads/',
             ), callback='parsePost', follow=True),
         )
 
@@ -51,22 +56,22 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        posts = sel.xpath('//*[@id="posts"]//div[contains(@class, "page")]')
+        posts = sel.css('.mbpost')
         items = []
-        topic = sel.xpath('/html/body/table/tr/td/div[2]/div/div[1]/font/b/text()').extract()[0].strip()
+        topic = sel.css('.contentText').xpath('./h1/text()').extract()[0].strip()
         url = response.url
-        condition ='Renal Cell Carcinoma'
+        condition="Renal Cell Carcinoma"
         for post in posts:
-            if len(post.css('.alt2'))==0:
+            if len(post.xpath('./div[1]/p/a'))==0:
                 continue
             item = PostItemsList()
-            item['author'] = self.parseText(str=post.css('.alt2').xpath('./div/text()').extract()[0].strip())
-            item['author_link']=''
+            item['author'] = self.parseText(str=post.xpath('./div[1]/p/a').extract()[0].strip())
+            item['author_link']=response.urljoin(post.xpath('./div[1]/p/a/@href').extract()[0])
             item['condition']=condition
-            item['create_date'] = self.parseText(str=post.css('.thead').extract()[0].strip())
-            post_msg=self.parseText(str=post.css('.alt1').xpath('./div[2]').extract()[0])
+            item['create_date'] = self.parseText(str=post.xpath('./div[2]/div[1]/p/text()').extract()[1].strip()[2:])
+            post_msg=self.parseText(str=post.css('.msgContent').extract()[0])
             item['post']=post_msg
-            item['tag']=condition
+            item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(post_msg)

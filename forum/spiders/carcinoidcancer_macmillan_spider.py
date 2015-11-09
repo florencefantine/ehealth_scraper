@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "carcinoid.cancer_macmillan_spider"
+    name = "carcinoidcancer_macmillan_spider"
     allowed_domains = ["macmillan.org.uk"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",

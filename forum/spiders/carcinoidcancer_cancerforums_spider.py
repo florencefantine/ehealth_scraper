@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "renal.cell.carcinoma_cancerorg_spider"
-    allowed_domains = ["cancer.org"]
+    name = "carcinoidcancer_cancerforums_spider"
+    allowed_domains = ["cancerforums.net"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://csn.cancer.org/forum/142",
+        "http://www.cancerforums.net/forums/22-Other-Cancers-Forum",
     ]
 
     rules = (
@@ -34,28 +34,21 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "odd")]//td[contains(@class, "title")]',
-                canonicalize=True,
-                ), callback='parsePost', follow=True),
-
-            Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "even")]//td[contains(@class, "title")]',
+                restrict_xpaths='//h3[contains(@class, "threadtitle")]',
                 canonicalize=True,
                 ), callback='parsePost', follow=True),
 
             # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
-                restrict_xpaths='//li[contains(@class, "pager-item")]',
+                restrict_xpaths='//div[contains(@class, "threadpagenav")]',
                 canonicalize=True,
-                deny='http://csn.cancer.org/node/',
-                #allow='http://www.cancerforums.net/threads/',
+                allow='http://www.cancerforums.net/forums/',
             ), follow=True),
 
             Rule(LinkExtractor(
-                restrict_xpaths='//li[contains(@class, "pager-item")]',
+                restrict_xpaths='//*[@id="pagination_bottom"]',
                 canonicalize=True,
-                deny='http://csn.cancer.org/forum/'
-                #allow='http://www.cancerforums.net/threads/',
+                allow='http://www.cancerforums.net/threads/',
             ), callback='parsePost', follow=True),
         )
 
@@ -64,21 +57,23 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        posts = sel.xpath('//*[@id="comments"]').css('.comment-forum')
-        condition="Renal Cell Carcinoma"
+        posts = sel.xpath('//*[@id="posts"]/li')
         items = []
-        topic = sel.xpath('//*[@id="squeeze"]/div/div/h2/text()').extract()[0].strip()
+        topic = sel.css('.threadtitle').xpath('./a/text()').extract()[0]
+        condition="Carcinoid Cancer"
         url = response.url
-
         for post in posts:
-            if len(post.css('.author'))==0:
-                continue
             item = PostItemsList()
-            item['author'] = self.parseText(str=post.css('.author').extract()[0].strip())
-            item['author_link']=''
+            item['author'] = post.xpath('.//a[contains(@class, "username")]/strong/text()').extract()[0].strip()
+            item['author_link']=response.urljoin(post.xpath('.//a[contains(@class, "username")]/@href').extract()[0])
+            date = post.css('.postdate').extract()[0]
+            soup = BeautifulSoup(date, 'html.parser')
+            date=re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['condition']=condition
-            item['create_date'] = self.parseText(str=post.css('.date').extract()[0].strip()[2:])
-            post_msg=self.parseText(str=post.css('.content').extract()[0])
+            item['create_date']=date
+            post_msg=post.css('.postcontent').extract()[0]
+            soup = BeautifulSoup(post_msg, 'html.parser')
+            post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['post']=post_msg
             item['tag']=''
             item['topic'] = topic
@@ -86,7 +81,3 @@ class ForumsSpider(CrawlSpider):
             logging.info(post_msg)
             items.append(item)
         return items
-
-    def parseText(self, str):
-        soup = BeautifulSoup(str, 'html.parser')
-        return re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()

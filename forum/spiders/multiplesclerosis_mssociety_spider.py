@@ -21,7 +21,7 @@ from selenium import webdriver
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(Spider):
-    name = "multiple_sclerosis_mssociety_spider"
+    name = "multiplesclerosis_mssociety_spider"
     allowed_domains = ["mssociety.org.uk"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",

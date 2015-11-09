@@ -20,13 +20,13 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "carcinoid.cancer_netpatientfoundation_spider"
-    allowed_domains = ["netpatientfoundation.org"]
+    name = "renalcellcarcinoma_healthboards_spider"
+    allowed_domains = ["healthboards.com"]
 #    start_urls = [
 #        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
 #    ]
     start_urls = [
-        "http://www.netpatientfoundation.org/forum/5_1.html",
+        "http://www.healthboards.com/boards/cancer-kidney/",
     ]
 
     rules = (
@@ -34,23 +34,16 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "tbCel1")]/td[2]',
+                restrict_xpaths='//*[@id="threadslist"]/tbody[2]/tr/td[3]/div[1]',
                 canonicalize=True,
-                ), callback='parsePost'),
-
-            Rule(LinkExtractor(
-                restrict_xpaths='//tr[contains(@class, "tbCel2")]/td[2]',
-                canonicalize=True,
-                ), callback='parsePost'),
+                ), callback='parsePost', follow=True),
 
             # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
-                restrict_xpaths='/html/body/div[3]/table[5]/tr/td/span/b/a[contains(@class, "navCell")]',
-            ), follow=True),
-            
-            Rule(LinkExtractor(
-                restrict_xpaths='/html/body/div[3]/table[4]/tr/td/span/b/a[contains(@class, "navCell")]'
-            ), callback='parsePost')
+                restrict_xpaths='//div[contains(@class, "pagenav")]',
+                canonicalize=True,
+                deny='http://www.healthboards.com/boards/images/',
+            ), callback='parsePost', follow=True),
         )
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
@@ -58,20 +51,20 @@ class ForumsSpider(CrawlSpider):
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-        posts = sel.xpath("//*[@id=\"allMsgs\"]").css(".forumsmb")
-        condition="Carcinoid Cancer"
+        posts = sel.xpath('//*[@id="posts"]//div[contains(@class, "page")]')
         items = []
-        topic = response.xpath('//h1[contains(@class, "headingTitle")]/text()').extract()[0]
+        topic = sel.xpath('/html/body/table/tr/td/div[2]/div/div[1]/font/b/text()').extract()[0].strip()
         url = response.url
+        condition ='Renal Cell Carcinoma'
         for post in posts:
+            if len(post.css('.alt2'))==0:
+                continue
             item = PostItemsList()
-            item['author'] = post.css('.username').xpath("./a/text()").extract()[0]
-            item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
+            item['author'] = self.parseText(str=post.css('.alt2').xpath('./div/text()').extract()[0].strip())
+            item['author_link']=''
             item['condition']=condition
-            item['create_date']= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.xpath('./tr[1]/td[3]/div/text()').extract()[1]).strip()
-            post_msg=post.css('.postedText').xpath('text()').extract()[0]
-            soup = BeautifulSoup(post_msg, 'html.parser')
-            post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['create_date'] = self.parseText(str=post.css('.thead').extract()[0].strip())
+            post_msg=self.parseText(str=post.css('.alt1').xpath('./div[2]').extract()[0])
             item['post']=post_msg
             item['tag']=condition
             item['topic'] = topic
@@ -79,3 +72,7 @@ class ForumsSpider(CrawlSpider):
             logging.info(post_msg)
             items.append(item)
         return items
+
+    def parseText(self, str):
+        soup = BeautifulSoup(str, 'html.parser')
+        return re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
