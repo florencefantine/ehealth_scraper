@@ -21,9 +21,14 @@ from bs4 import BeautifulSoup
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
     name = "hiv_webmd_spider"
-    allowed_domains = ["exchanges.webmd.com","forums.webmd.com"]
+    allowed_domains = ["webmd.com"]
+#    start_urls = [
+#        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
+#    ]
     start_urls = [
-        "http://exchanges.webmd.com/hiv-and-aids-exchange",
+        "http://exchanges.webmd.com/hiv-and-aids-exchange/forum/index",
+        "http://exchanges.webmd.com/hiv-and-aids-exchange/tip/index",
+        "http://exchanges.webmd.com/hiv-and-aids-exchange/resource/index"
     ]
 
     rules = (
@@ -31,69 +36,71 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                restrict_xpaths="//div[contains(@class,'expert_fmt')]/span/a",
+                restrict_xpaths='//div[contains(@class, "expert_fmt")]/span',
                 canonicalize=True,
-            ), callback='parsePost', follow=True),
+                ), callback='parsePost', follow=True),
 
-            # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
-                restrict_xpaths="//div[contains(@class, 'pages')]/a",
+                restrict_xpaths='//div[contains(@class, "pages")]',
                 canonicalize=True,
-            ), callback='parsePost', follow=True),
+                ), follow=True),
         )
-
-    def cleanText(self,text):
-        soup = BeautifulSoup(text,'html.parser')
-        text = soup.get_text();
-        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
-        return text
-
-    def cleanDate(self,text):
-        create_date = re.sub("document.write\(DateDelta\('",'',text) 
-        create_date = re.sub("'\)\);",'',create_date) 
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
-
-        posts = sel.css(".exchange-reply-container")
+        posts = sel.xpath('//div[contains(@class, "exchange_thread_reply_rdr")]')
         items = []
-        condition="hiv"
-        topic = sel.xpath("//div[contains(@class,'first_item_title_fmt')]/text()").extract()[0]
+        if len(sel.xpath('//div[contains(@class, "first_item_title_fmt")]'))==0:
+            return items
+        topic = sel.xpath('//div[contains(@class, "first_item_title_fmt")]/text()').extract()[0]
         url = response.url
-
-        #---------
-        post = sel.xpath('//*[contains(@class,"exchange_thread_rdr")]')
+        post = sel.xpath('//div[contains(@class, "firstitem_mid_fmt")]')
         item = PostItemsList()
-        item['author'] = post.xpath("//div[contains(@class,'post_hdr_fmt')]/a").xpath("text()").extract()[0].strip()
-        item['author_link']=response.urljoin(post.css('.post_hdr_fmt').xpath("./a/@href").extract()[0])
-        item['condition']=condition
-        item['create_date']= self.cleanDate(post.xpath("//div[contains(@class,'first_posted_fmt')]/script/text()").extract()[0])
-        item['post']=self.cleanText(post.css('.post_fmt').extract()[0])
+        if len(post.css('.post_hdr_fmt').xpath('./a'))>0:
+            item['author'] = post.css('.post_hdr_fmt').xpath("./a").xpath("text()").extract()[0].strip()
+            item['author_link']=response.urljoin(post.css('.post_hdr_fmt').xpath("./a/@href").extract()[0])
+        else:
+            item['author'] = ""
+            item['author_link']=""
+        date = post.css('.first_posted_fmt').extract()[0]
+        date = date[date.find('DateDelta')+11:date.rfind("'")]
+        item['condition'] = condition
+        item['create_date'] = date
+        condition="hiv"
+        post_msg=post.css('.post_fmt').extract()[0]
+        soup = BeautifulSoup(post_msg, 'html.parser')
+        post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+        item['post']=post_msg
         item['tag']=''
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)
         items.append(item)
 
-        cnt=0
         for post in posts:
-            if cnt>1 and ("forum" in url.split("/")):
-                item = PostItemsList()
-                try:
-                    item['author'] = post.css('.post_hdr_fmt').xpath("./a[1]").xpath("text()").extract()[0].strip()
-                    item['author_link']=response.urljoin(post.css('.post_hdr_fmt').xpath("./a[1]/@href").extract()[0])
-                    item['create_date']= self.cleanDate(post.xpath("//div[contains(@class,'posted_fmt')]/script/text()").extract()[0])
-                    post_msg=self.cleanText(post.css('.post_fmt').extract()[0])
-                    item['post']=post_msg
-                    item['tag']=''
-                    item['topic'] = topic
-                    item['url']=url
-                    logging.info(post_msg)
-                    items.append(item)
-                except:
-                    continue
-                cnt+=1
+            item = PostItemsList()
+            if len(post.css('.post_hdr_fmt'))==0:
+                continue
+            if len(post.css('.post_hdr_fmt').xpath('./a'))>0:
+                item['author'] = post.css('.post_hdr_fmt').xpath("./a").xpath("text()").extract()[0].strip()
+                item['author_link']=response.urljoin(post.css('.post_hdr_fmt').xpath("./a/@href").extract()[0])
+            else:
+                item['author'] = ""
+                item['author_link']=""
+            date = post.css('.posted_fmt').extract()[0]
+            date = date[date.find('DateDelta')+11:date.rfind("'")]
+            item['condition'] = condition
+            item['create_date'] = date
+            post_msg=post.css('.post_fmt').extract()[0]
+            soup = BeautifulSoup(post_msg, 'html.parser')
+            post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['post']=post_msg
+            item['tag']='hiv'
+            item['topic'] = topic
+            item['url']=url
+            logging.info(post_msg)
+            items.append(item)
         return items

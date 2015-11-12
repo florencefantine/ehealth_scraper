@@ -6,7 +6,7 @@ from forum.items import PostItemsList
 import re
 import logging
 
-from helpers import cleanText
+# from helpers import cleanText
 
 
 class ForumsSpider(CrawlSpider):
@@ -15,6 +15,7 @@ class ForumsSpider(CrawlSpider):
     start_urls = [
         "http://www.msworld.org/forum/",
     ]
+
 
     rules = (
         Rule(LinkExtractor(
@@ -29,6 +30,13 @@ class ForumsSpider(CrawlSpider):
             allow=(r"showthread.php")
         ), callback="parsePostsList", follow=True),
     )
+
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
 
     def replace_link(self, response):
         # little hack for remove request string from url
@@ -55,7 +63,7 @@ class ForumsSpider(CrawlSpider):
                 './/span[@class="date"]//text()').extract())
             message = " ".join(post.xpath(
                 './/div[contains(@id, "post_message_")]//text()').extract())
-            message = cleanText(message)
+            message = self.cleanText(message)
 
             item['author'] = author
             item['author_link'] = author_link

@@ -6,7 +6,7 @@ from forum.items import PostItemsList
 import re
 import logging
 
-from helpers import cleanText
+# from helpers import cleanText
 
 
 class ForumsSpider(CrawlSpider):
@@ -26,6 +26,12 @@ class ForumsSpider(CrawlSpider):
         ), follow=True),
 
     )
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
 
     def parsePostsList(self, response):
         items = []
@@ -40,7 +46,7 @@ class ForumsSpider(CrawlSpider):
             '//span[@class="node-date"]/span/text()').extract()[0]
         original_message = " ".join(response.xpath(
             '//div[@class="field-item even"]//text()').extract())
-        original_message = cleanText(original_message)
+        original_message = self.cleanText(original_message)
         condiiton="multiple sclerosis"
 
         item = PostItemsList()

@@ -6,7 +6,7 @@ from forum.items import PostItemsList
 import re
 import logging
 
-from helpers import cleanText
+# from helpers import cleanText
 
 
 class ForumsSpider(CrawlSpider):
@@ -27,6 +27,13 @@ class ForumsSpider(CrawlSpider):
 
     )
 
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
+
+
     def parsePostsList(self, response):
         items = []
         url = response.url
@@ -46,7 +53,7 @@ class ForumsSpider(CrawlSpider):
                 .extract()[-2].strip()
             message = " ".join(post.xpath(
                 './/div[@class="KonaBody"]//text()').extract())
-            message = cleanText(message)
+            message = self.cleanText(message)
 
             item['author'] = author
             item['author_link'] = author_link
