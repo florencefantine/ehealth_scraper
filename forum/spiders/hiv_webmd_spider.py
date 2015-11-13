@@ -57,6 +57,7 @@ class ForumsSpider(CrawlSpider):
             return items
         topic = sel.xpath('//div[contains(@class, "first_item_title_fmt")]/text()').extract()[0]
         url = response.url
+        condition="hiv"
         post = sel.xpath('//div[contains(@class, "firstitem_mid_fmt")]')
         item = PostItemsList()
         if len(post.css('.post_hdr_fmt').xpath('./a'))>0:
@@ -69,7 +70,6 @@ class ForumsSpider(CrawlSpider):
         date = date[date.find('DateDelta')+11:date.rfind("'")]
         item['condition'] = condition
         item['create_date'] = date
-        condition="hiv"
         post_msg=post.css('.post_fmt').extract()[0]
         soup = BeautifulSoup(post_msg, 'html.parser')
         post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
