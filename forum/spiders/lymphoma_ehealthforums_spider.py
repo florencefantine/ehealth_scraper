@@ -17,10 +17,10 @@ import logging
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "lungcancer_forumslungevity_spider"
-    allowed_domains = ["lungevity.org"]
+    name = "lymphoma_ehealthforums_spider"
+    allowed_domains = ["ehealthforum.com"]
     start_urls = [
-        "http://forums.lungevity.org/index.php?/forum/19-general/",
+        "http://ehealthforum.com/health/lymphoma.html",
     ]
 
     rules = (
@@ -28,12 +28,12 @@ class ForumsSpider(CrawlSpider):
             # Excludes links that end in _W.html or _M.html, because they point to 
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
-                    restrict_xpaths='//a[@class="topic_title"]',
+                    restrict_xpaths='//a[contains(@class,"topictitle")]',
                     canonicalize=True,
                 ), callback='parsePostsList'),
             # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
-                    restrict_xpaths='//li[@class="page"]/a[contains(@href,"page")]',
+                    restrict_xpaths='//a[@class="pagination_number"]',
                     canonicalize=True,
                     deny=(r'user_profile_*\.html',)
                 ), follow=True),
@@ -44,28 +44,25 @@ class ForumsSpider(CrawlSpider):
         text = soup.get_text();
         text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
         return text 
+    
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePostsList(self,response):
         sel = Selector(response)
-        #posts = sel.css(".vt_post_holder")
-        posts = sel.xpath('//div[@class="post_body")]')
+        posts = sel.css(".vt_post_holder")
         items = []
-        topic = ''.join(sel.xpath('//h1[@class="ipsType_pagetitle"]/text()').extract())
+        topic = response.css('h1.caps').xpath('text()').extract()[0]
         url = response.url
-        condition="lungcancer"
+        condition="Lymphoma"
         for post in posts:
             item = PostItemsList()
-            item['author'] = ''.join(post.xpath('.//span[@class="author vcard"]/text()').extract())
-            item['author_link'] = ''
-            item['condition'] = condition
-            item['create_date'] = ''.join(post.xpath('.//abbr[@class="published"]/text()').extract())
-            #item['create_date']= self.cleanText(create_date) 
-            
-            message = ''.join(post.xpath('.//div[@div="post entry-content ")]/text()').extract())
-            item['post'] = self.cleanText(message)
-            item['tag']='lungcancer'
+            item['author'] = post.css('.vt_asked_by_user').xpath("./a").xpath("text()").extract()[0]
+            item['author_link']=post.css('.vt_asked_by_user').xpath("./a").xpath("@href").extract()[0]
+            item['condition']=condition
+            item['create_date']= post.css('.vt_first_timestamp').xpath('text()').extract().extend(response.css('.vt_reply_timestamp').xpath('text()').extract())
+            item['post'] = re.sub('\s+',' '," ".join(post.css('.vt_post_body').xpath('text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
+            item['tag']='Lymphoma'
             item['topic'] = topic
             item['url']=url
             logging.info(item.__str__)
