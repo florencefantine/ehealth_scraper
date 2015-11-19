@@ -51,7 +51,7 @@ class ForumsSpider(CrawlSpider):
         sel = Selector(response)
         posts = sel.xpath('//div[@class="postbody"]')
         items = []
-        topic = response.xpath('//h1//text()').extract()
+        topic = response.xpath('//h1//text()').extract()[0]
         url = response.url
         condition="adhd"
         

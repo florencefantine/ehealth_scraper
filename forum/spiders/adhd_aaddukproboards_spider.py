@@ -56,21 +56,21 @@ class ForumsSpider(CrawlSpider):
         sel = Selector(response)
         posts = sel.xpath('//td[@class="unblocked"]')
         items = []
-        topic = response.xpath('//h1//text()').extract()
+        topic = response.xpath('//h1//text()').extract()[0]
         url = response.url
         condition="adhd"
         
         for post in posts:
             item = PostItemsList()
-            item['author'] = post.xpath('.//a[contains(@class,"user-link user")]/text()').extract()
-            item['author_link'] = post.xpath('.//a[contains(@class,"user-link user")]/@href').extract()
+            item['author'] = post.xpath('.//a[contains(@class,"user-link user")]/text()').extract()[0]
+            item['author_link'] = post.xpath('.//a[contains(@class,"user-link user")]/@href').extract()[0]
             item['condition'] = condition
             
-            item['create_date'] = post.xpath('.//abbr[@class="time"]/text()').extract()
+            item['create_date'] = post.xpath('.//abbr[@class="time"]/text()').extract()[0]
            
             message = ''.join(post.xpath('.//div[@class="message"]/text()').extract())
             item['post'] = self.cleanText(message)
-            item['tag']='adhd'
+            item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(item.__str__)

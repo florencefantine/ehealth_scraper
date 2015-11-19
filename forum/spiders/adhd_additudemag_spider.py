@@ -63,8 +63,8 @@ class ForumsSpider(CrawlSpider):
         condition="adhd"
         for post in posts:
             item = PostItemsList()
-            item['author'] = post.xpath('.//div[@class="largeLinks"]/a/text()').extract()
-            item['author_link'] = post.xpath('.//div[@class="largeLinks"]/a/@href').extract()
+            item['author'] = post.xpath('.//div[@class="largeLinks"]/a/text()').extract()[0]
+            item['author_link'] = post.xpath('.//div[@class="largeLinks"]/a/@href').extract()[0]
             item['condition'] = condition
             create_date = ''.join(post.xpath('.//td[@class="tableRowHeading"]//text()').extract())
             item['create_date']= self.cleanText(create_date) 
@@ -74,6 +74,5 @@ class ForumsSpider(CrawlSpider):
             item['tag']='adhd'
             item['topic'] = topic
             item['url']=url
-            logging.info(item.__str__)
             items.append(item)
         return items

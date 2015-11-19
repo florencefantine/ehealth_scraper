@@ -17,7 +17,7 @@ import logging
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "adhd_psychcentral_spider"
+    name = "adhd_psychcentral_sspider"
     allowed_domains = ["psychcentral.com"]
     start_urls = [
         "http://forums.psychcentral.com/attention-deficit-disorder-add-adhd/",
@@ -58,7 +58,7 @@ class ForumsSpider(CrawlSpider):
         for post in posts:
             item = PostItemsList()
             item['author'] = post.xpath('.//a[@class="bigusername"]/text()').extract()
-            item['author_link'] = post.xpath('.//a[@class="bigusername"]/@href').extract()
+            item['author_link'] = post.xpath('.//a[@class="bigusername"]/@href').extract()[0]
             item['condition'] = condition
             create_date = ''.join(post.xpath('.//td[@class="thead"]//text()').extract())
             item['create_date']= self.cleanText(create_date) 

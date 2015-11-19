@@ -58,7 +58,7 @@ class ForumsSpider(CrawlSpider):
         for post in posts:
             item = PostItemsList()
             item['author'] = ''.join(post.xpath('.//a[contains(@class, "author may-blank")]/text()').extract())
-            item['author_link'] = post.xpath('.//a[contains(@class, "author may-blank")]/@href').extract()
+            item['author_link'] = post.xpath('.//a[contains(@class, "author may-blank")]/@href').extract()[0]
             item['condition']=condition
             item['create_date']= ''.join(post.xpath('.//time/@title').extract())
             message = ''.join(post.xpath('.//div[@class="usertext-body may-blank-within md-container "]//text()').extract())
@@ -66,6 +66,5 @@ class ForumsSpider(CrawlSpider):
             item['tag']='adhd'
             item['topic'] = topic
             item['url']=url
-            logging.info(item.__str__)
             items.append(item)
         return items

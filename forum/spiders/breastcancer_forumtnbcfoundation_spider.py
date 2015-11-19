@@ -58,7 +58,7 @@ class ForumsSpider(CrawlSpider):
         items = []
         topic = ''.join(response.xpath('//h1/text()').extract())
         url = response.url
-        condition="breastcancer"
+        condition="breast cancer"
         
         #for post in posts:
         author = sel.xpath('//span[contains(@id, "userProfile")]/text()').extract()
@@ -74,7 +74,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             item['create_date'] = self.cleanText(create_date[i])    
             item['post'] = self.cleanText(message[i])
-            item['tag']='adhd'
+            item['tag']=''
             item['topic'] = topic
             item['url']=url            
             logging.info(item.__str__)

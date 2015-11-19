@@ -94,7 +94,7 @@ class ForumsSpider(CrawlSpider):
             
             message = ''.join(post.xpath('.//td[@class="bbp-reply-content"]//text()').extract())
             item['post'] = self.cleanText(message)
-            item['tag']='adhd'
+            item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(item.__str__)

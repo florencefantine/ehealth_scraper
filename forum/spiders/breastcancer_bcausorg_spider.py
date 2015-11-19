@@ -56,23 +56,22 @@ class ForumsSpider(CrawlSpider):
         sel = Selector(response)
         posts = sel.xpath('//table[@class="tablebg"]')
         items = []
-        topic = response.xpath('//h2//text()').extract()
+        topic = response.xpath('//h2//text()').extract()[0]
         url = response.url
-        condition="breastcancer"
+        condition="breast cancer"
         
         for post in posts:
             item = PostItemsList()
-            item['author'] = post.xpath('.//b[@class="postauthor"]/text()').extract()
-            item['author_link'] = post.xpath('.//a[contains(@href,"viewprofile")]/@href').extract()
+            item['author'] = post.xpath('.//b[@class="postauthor"]/text()').extract()[0]
+            item['author_link'] = post.xpath('.//a[contains(@href,"viewprofile")]/@href').extract()[0]
             item['condition'] = condition
             
-            item['create_date'] = post.xpath('.//div[contains(.//text(),"Posted")]/text()').extract()
+            item['create_date'] = post.xpath('.//div[contains(.//text(),"Posted")]/text()').extract()[0]
            
             message = ''.join(post.xpath('.//div[@class="postbody"]/text()').extract())
             item['post'] = self.cleanText(message)
             item['tag']='breastcancer'
             item['topic'] = topic
             item['url']=url
-            logging.info(item.__str__)
             items.append(item)
         return items

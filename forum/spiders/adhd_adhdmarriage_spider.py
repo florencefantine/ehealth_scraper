@@ -68,12 +68,12 @@ class ForumsSpider(CrawlSpider):
         item['author_link'] = '' 
         item['condition'] = condition
         #create_date = ''.join(sel.xpath('//span[@class="post-meta"]/text()').extract()).replace("Posted by","").replace("to","")
-        create_date = sel.xpath('//header[@class="node-header"]//time/text()').extract()
+        create_date = sel.xpath('//header[@class="node-header"]//time/text()').extract()[0]
         item['create_date']= create_date
         
         message = ''.join(sel.xpath('//header[@class="node-header"]//div[@class="field-items"]//text()').extract())
         item['post'] = self.cleanText(message)
-        item['tag']='adhd'
+        item['tag']=''
         item['topic'] = topic
         item['url']=url
         logging.info(item.__str__)
@@ -81,10 +81,10 @@ class ForumsSpider(CrawlSpider):
 
         for post in posts:
             item = PostItemsList()
-            item['author'] = post.xpath('.//span[@class="username"]/text()').extract()
+            item['author'] = post.xpath('.//span[@class="username"]/text()').extract()[0]
             item['author_link'] = ''
             item['condition'] = condition
-            create_date = post.xpath('.//span[@class="date-time"]/text()').extract()
+            create_date = post.xpath('.//span[@class="date-time"]/text()').extract()[0]
             item['create_date']= create_date
             
             message = ''.join(post.xpath('.//div[@class="comment-content"]//text()').extract())
