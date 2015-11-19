@@ -22,7 +22,7 @@ import urlparse
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "epilepsy_adderworld_spider"
+    name = "adhd_adderworld_spider"
     allowed_domains = ["adderworld.ning.com"]
     start_urls = [
         "http://adderworld.ning.com/forum/categories/general-1/listForCategory",
