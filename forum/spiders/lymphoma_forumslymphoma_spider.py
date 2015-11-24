@@ -70,6 +70,7 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             create_date= post.css('.vt_first_timestamp').xpath('text()').extract().extend(response.css('.vt_reply_timestamp').xpath('text()').extract())
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = self.cleanText(" ".join(post.css('.vt_post_body').xpath('text()').extract()))
             # item['tag']='Lymphoma'
             item['topic'] = topic

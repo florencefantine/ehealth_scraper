@@ -66,6 +66,7 @@ class ForumsSpider(CrawlSpider):
             item['author'] = post.xpath('./td[@class="bbp-reply-author"]/a[2]/text()').extract_first()
             item['author_link'] = post.xpath('./td[@class="bbp-reply-author"]/a[2]/@href').extract_first()
             item['create_date'] = self.getDate(date.xpath('./td/text()').extract_first().strip())
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = re.sub(r'\s+',' ',self.cleanText(" ".join(post.xpath('./td[@class="bbp-reply-content"]/p/text()').extract())))
             # item['tag']=''
             item['topic'] = topic

@@ -114,8 +114,10 @@ class ForumsSpider(CrawlSpider):
         item['author'] = post.css('.username').xpath("./a").xpath("text()").extract()[0].strip()
         item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
         item['condition'] = condition
+
         create_date= self.cleanText(post.css('.discussion_text').xpath('./span/text()').extract()[0])
         item['create_date']= self.getDate(create_date)
+        item['domain'] = "".join(self.allowed_domains)
         post_msg=self.cleanText(post.css('.discussion_text').extract()[0])
         item['post']=post_msg
         # item['tag']='rheumatoid arthritis'

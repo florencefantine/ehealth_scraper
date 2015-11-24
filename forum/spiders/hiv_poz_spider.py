@@ -77,6 +77,7 @@ class ForumsSpider(CrawlSpider):
                 item['condition'] = condition
                 create_date = self.cleanText(post.xpath('.//div[@class="keyinfo"]/div[@class="smalltext"]/text()').extract()[1])
                 item['create_date'] = self.getDate(create_date)
+                item['domain'] = "".join(self.allowed_domains)
                 item['post'] = self.cleanText(" ".join(post.xpath('.//div[@class="post"]/div[@class="inner"]/text()').extract()))
                 item['topic'] = topic
                 item['url']=url

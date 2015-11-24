@@ -78,6 +78,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date =re.sub(r'^#\d+','',self.parseText(str=post.css('.x-comment-info').extract()[0]))
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=self.parseText(" ".join(post.css('.x-post-content').extract()))
             item['topic'] = topic
             item['url']=url

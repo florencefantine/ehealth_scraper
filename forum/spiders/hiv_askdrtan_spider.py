@@ -121,6 +121,7 @@ class ForumsSpider(Spider):
         item['create_date']=date
         post_msg=sel.xpath('//*[@id="content"]/table/tbody/tr[1]/td/p').extract()[0]
         soup = BeautifulSoup(post_msg, 'html.parser')
+        item['domain'] = "".join(self.allowed_domains)
         post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
         # item['tag']='hiv'

@@ -68,6 +68,7 @@ class LymphomasSpider(scrapy.Spider):
         item['author_link'] = author_link
         item['condition']=condition
         item['create_date'] = self.getDate(response.xpath(author_date_posted_xpath).extract()[0])
+        item['domain'] = "".join(self.allowed_domains)
         item['post'] = self.cleanText(" ".join(response.xpath(author_text_xpath).extract()))
         item['topic'] = topic
         item['url'] = response.url

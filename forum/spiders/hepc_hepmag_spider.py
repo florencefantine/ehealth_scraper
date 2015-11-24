@@ -100,6 +100,7 @@ class ForumsSpider(CrawlSpider):
             post['condition'] = condition
             create_date = self.cleanText(" ".join(keyinfo.cssselect('.smalltext')[0].xpath("text()")))
             post['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             post['topic'] = keyinfo.cssselect('h5')[0].xpath("./a/text()")[0]
             post['post'] = self.cleanText(" ".join(postWrapper.cssselect(".post")[0].xpath("./div/text()")))
             post['url'] = self.urlRemove(response.url,"PHPSESSID")

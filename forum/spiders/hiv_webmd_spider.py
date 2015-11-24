@@ -92,6 +92,7 @@ class ForumsSpider(CrawlSpider):
         date = date[date.find('DateDelta')+11:date.rfind("'")]
         item['condition'] = condition
         item['create_date'] = self.getDate(date)
+        item['domain'] = "".join(self.allowed_domains)
         # soup = BeautifulSoup(post_msg, 'html.parser')
         # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=self.cleanText(post.css('.post_fmt').extract()[0])

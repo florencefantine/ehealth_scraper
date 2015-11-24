@@ -72,6 +72,7 @@ class ForumsSpider(CrawlSpider):
         item['condition'] = condition
         item['create_date'] = ' '. join(item['create_date'][1:-2])[:-2]
         item['create_date'] = self.getDate(item['create_date']) 
+        item['domain'] = "".join(self.allowed_domains)
         item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="content-primary-post"]/div[@class="post-body"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
         # item['tag']=''
         item['topic'] = topic

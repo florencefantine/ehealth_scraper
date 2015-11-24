@@ -79,6 +79,7 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             create_date= post.css('.vt_first_timestamp').xpath('text()').extract().extend(response.css('.vt_reply_timestamp').xpath('text()').extract())
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             message = " ".join(post.css('.vt_post_body').xpath('text()').extract())
             item['post'] = self.cleanText(message)
             # item['post'] = re.sub('\s+',' '," ".join(post.css('.vt_post_body').xpath('text()').extract()).replace("\t","").replace("\n","").replace("\r",""))

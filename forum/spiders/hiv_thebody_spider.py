@@ -85,6 +85,7 @@ class ForumsSpider(CrawlSpider):
         date = sel.xpath('//*[@id="maincontent_forums"]/div[4]/table/tr[1]/td[3]/p[1]/text()').extract()[0]
         item['condition']=condition
         item['create_date']=self.getDate(date)
+        item['domain'] = "".join(self.allowed_domains)
         post_msg=sel.xpath('//*[@id="maincontent_forums"]/div[4]/table/tr[1]/td[3]/p[3]').extract()[0]
         # soup = BeautifulSoup(post_msg, 'html.parser')
         # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()

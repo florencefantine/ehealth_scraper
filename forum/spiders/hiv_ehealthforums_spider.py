@@ -82,7 +82,7 @@ class ForumsSpider(CrawlSpider):
             item['create_date'] = self.getDate(post.xpath('.//span[@class="vt_first_timestamp"]/text()').extract_first())
             if not item['create_date']:
                 item['create_date'] = self.getDate(post.xpath('.//div[@class="vt_reply_timestamp"]/text()').extract_first().replace('replied','').strip())
-
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = self.cleanText(re.sub('\s+',' '," ".join(post.xpath('.//div[@class="vt_post_body"]/text()').extract()).replace("\t","").replace("\n","").replace("\r","")))
             # item['tag']=''
             item['topic'] = topic
