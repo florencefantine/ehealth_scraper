@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
+import hashlib
 from forum.items import PostItemsList
 import re
 from bs4 import BeautifulSoup

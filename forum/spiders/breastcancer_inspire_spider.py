@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # import scrapy
+import hashlib
 # from scrapy.http import Request
 # from bs4 import BeautifulSoup
 # from forum.items import PostItemsList

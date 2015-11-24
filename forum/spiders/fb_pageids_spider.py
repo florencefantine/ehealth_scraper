@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import hashlib
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule, Spider, Request
 from scrapy.contrib.linkextractors import LinkExtractor

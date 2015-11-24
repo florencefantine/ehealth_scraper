@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from scrapy.contrib.spiders import CrawlSpider, Rule
+import hashlib
 from scrapy.contrib.linkextractors import LinkExtractor
 from forum.items import PostItemsList
 import logging

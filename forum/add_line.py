@@ -20,7 +20,7 @@ print(files_to_update)
 for x in files_to_update:
 	with open(mypath+"/"+x,'r') as file:
 		lines = file.readlines()
-		lines[1]=lines[1]+"import dateparser\n"
+		lines[1]=lines[1]+"import hashlib\n"
 	with open(mypath+"/"+x,'w') as file:
 		for line in lines:
 			file.write(line)

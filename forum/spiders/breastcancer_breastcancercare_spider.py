@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from scrapy.linkextractors import LinkExtractor
+import hashlib
 from scrapy.spiders import CrawlSpider, Rule
 from bs4 import BeautifulSoup
 import re
