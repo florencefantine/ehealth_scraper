@@ -20,7 +20,7 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, lik
 ITEM_PIPELINES = {
     'forum.pipelines.DuplicatesLinksPipeline': 200
 	,'forum.pipelines.CopyFieldPipeline': 300
-	# 'forum.pipelines.AddUUIDPipeline': 400,
+	,'forum.pipelines.AddUUIDPipeline': 400,
     # 'forum.fluentd_pipelines.FluentdPipeline': 500
 }
 

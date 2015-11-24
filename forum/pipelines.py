@@ -14,12 +14,13 @@ import hashlib
 class CopyFieldPipeline(object):
     def process_item(self,item,spider):
         item['message']=item['post']
-        item['message'] = None
+        item['post'] = None
 
-# class AddUUIDPipeline(object):
-#     def process_item(self,item,spider):
-#         item['message']=item['post']
-#         item['message'] = None
+
+class AddUUIDPipeline(object):
+    def process_item(self,item,spider):
+        newStr = item['author']+item['author_link']+item['create_date']+item['message']+item['topic']+item['url']+item['condition']
+        item['post_id']= hashlib.md5(newStr).hexdigest()[:9]
 
 
 # Pipeline to remove duplicate objects
