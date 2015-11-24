@@ -87,6 +87,7 @@ class ForumsSpider(CrawlSpider):
             item['author_link'] = author_link
             item['condition'] = condition
             item['create_date'] = self.getDate(self.cleanText(create_date))
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = message
             # item['tag'] = 'epilepsy'
             item['topic'] = subject

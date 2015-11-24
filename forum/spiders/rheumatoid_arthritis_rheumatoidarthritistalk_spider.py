@@ -85,8 +85,8 @@ class ForumsSpider(CrawlSpider):
                 continue
             create_date= self.parseText(str=post.css('.DateTime').extract()[0])
             item['create_date']= self.getDate(create_date)
-            post_msg= self.parseText(str=post.css('.messageText').extract()[0])
-            item['post']=post_msg
+            item['domain'] = "".join(self.allowed_domains)
+            item['post']=self.parseText(str=post.css('.messageText').extract()[0])
             # item['tag']='rheumatoid arthritis'
             item['topic'] = topic
             item['url']=url

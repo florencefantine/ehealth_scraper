@@ -77,8 +77,10 @@ class ForumsSpider(CrawlSpider):
             item['author'] = self.cleanText(post.xpath('./tr[2]/td[1]/div[starts-with(@id,"postmenu")]/a').extract()[0].encode('ascii'))
             item['author_link'] = "http://neurotalk.psychcentral.com/%s" % post.xpath('./tr[2]/td[1]/div[starts-with(@id,"postmenu")]/a/@href').extract()[0]
             item['condition'] = condition
+
             create_date = self.cleanText(" ".join(post.xpath('./tr/td[1]').extract()))
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = post_msg
             # item['tag'] = 'multiple-sclerosis'
             item['topic'] = topic

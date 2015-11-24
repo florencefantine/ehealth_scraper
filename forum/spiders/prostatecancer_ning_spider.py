@@ -104,6 +104,7 @@ class ForumsSpider(CrawlSpider):
         item['condition']=condition
         create_date = self.cleanText(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[@class="nolink"][2]/text()').extract_first().replace('on','').replace('in','').replace('at',','),False)
         item['create_date'] = self.getDate(create_date)
+        item['domain'] = "".join(self.allowed_domains)
         item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
         # item['tag']='epilepsy'
         item['topic'] = topic
@@ -117,6 +118,7 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             create_date = self.cleanText(post.xpath('./dt[@class="byline"]/span[@class="timestamp"]/text()').extract_first().replace('at',','),False)
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
             # item['tag']=''
             item['topic'] = topic

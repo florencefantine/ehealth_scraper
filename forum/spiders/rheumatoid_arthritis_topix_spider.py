@@ -86,6 +86,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date= self.parseText(str=post.css('.x-comment-info').extract()[0])
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             post_msg= self.parseText(str=post.css('.x-post-content').extract()[0])
             item['post']=post_msg
             # item['tag']='rheumatoid arthritis'

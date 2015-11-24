@@ -72,6 +72,7 @@ class ForumsSpider(CrawlSpider):
         item['condition']=condition
         create_date= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.css('.discussion_text').xpath('./span/text()').extract()[0]).strip()
         item['create_date']= self.getDate(create_date)
+        item['domain'] = "".join(self.allowed_domains)
         item['post']=self.cleanText(post.css('.discussion_text').extract()[0])
         item['topic'] = topic
         item['url']=url
@@ -86,6 +87,7 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             create_date= self.cleanText(post.xpath('./tr[1]/td[2]/div/table/tr/td/span[2]/text()').extract()[0])
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=self.cleanText(post.css('.discussion_text').extract()[0])
             item['topic'] = topic
             item['url']=url

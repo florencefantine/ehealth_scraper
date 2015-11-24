@@ -89,6 +89,7 @@ class ForumsSpider(CrawlSpider):
             else:
                 create_date = self.parseText(str=post.xpath('./div/div[3]/div/div').extract()[0])
                 item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = post_msg
             item['tag'] = 'multiple-sclerosis'
             item['topic'] = topic

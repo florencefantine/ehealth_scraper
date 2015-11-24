@@ -92,6 +92,7 @@ class ForumsSpider(Spider):
         create_date= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
         item['create_date']= self.getDate(create_date)
         post_msg= self.parseText(str=post.css('.forum-post-content').extract()[0])
+        item['domain'] = "".join(self.allowed_domains)
         item['post']=post_msg
         # item['tag']='Multiple Sclerosis'
         item['topic'] = topic
@@ -117,6 +118,7 @@ class ForumsSpider(Spider):
             item['condition'] = condition
             create_date= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
             item['create_date']= self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             post_msg= self.parseText(str=post.css('.forum-post-content').extract()[0])
             item['post']=post_msg
             # item['tag']='Multiple Sclerosis'

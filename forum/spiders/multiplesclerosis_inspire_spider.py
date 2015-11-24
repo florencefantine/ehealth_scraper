@@ -76,6 +76,7 @@ class ForumsSpider(CrawlSpider):
         item['condition'] = condition
         create_date = self.cleanText(post_info.xpath('//*/ul/li[@class="by"]').extract()[0]).split(u'\xb7')[1].strip()
         item['create_date'] = self.getDate(create_date)
+        item['domain'] = "".join(self.allowed_domains)
         item['post'] = post_info.xpath('//*[@class="post-body"]').extract()[0]
         # item['tag'] = 'multiple-sclerosis'
         item['topic'] = topic
@@ -95,6 +96,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date = self.cleanText(post.xpath('./div/ul/li[3]').extract()[0])
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = post_msg
             # item['tag'] = 'multiple-sclerosis'
             item['topic'] = topic

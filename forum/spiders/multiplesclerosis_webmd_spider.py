@@ -88,6 +88,7 @@ class ForumsSpider(CrawlSpider):
             create_date = create_date.replace("""'));</script>""",'')
             item['condition'] = condition
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = post_msg
             # item['tag'] = ''
             item['topic'] = topic
