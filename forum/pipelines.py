@@ -36,7 +36,7 @@ class DuplicatesLinksPipeline(object):
             return item 
 
 
-class FluentDPipeline(object):
+class FluentdPipeline(object):
     def __init__(self):
         sender.setup('FM')
 
@@ -44,6 +44,8 @@ class FluentDPipeline(object):
     def process_item(self,item,spider):
         event.Event('post', {
           'user_id': item['author']
+          ,'user_link':item['author_link']
+          ,'domain': item['domain']
           ,'post_id': item['post_id']
           ,'@timestamp': item['create_date']
           ,'message':item['post']
