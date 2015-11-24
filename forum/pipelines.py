@@ -6,21 +6,20 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 from scrapy.exceptions import DropItem
 from scrapy import signals
+import hashlib
+
 # from scrapy.contrib.exporter import CsvItemExporter
 
 # Pipeline to remove duplicate objects
-class DuplicatesPipeline(object):
-    def __init__(self):
-        self.product_pairs = set()
-
+class CopyFieldPipeline(object):
     def process_item(self,item,spider):
-        check = item['url']
+        item['message']=item['post']
+        item['message'] = None
 
-        if check in self.product_pairs:
-            raise DropItem("Already added %s" % item)
-        else:
-            self.product_pairs.add(check)
-            return item 
+# class AddUUIDPipeline(object):
+#     def process_item(self,item,spider):
+#         item['message']=item['post']
+#         item['message'] = None
 
 
 # Pipeline to remove duplicate objects
