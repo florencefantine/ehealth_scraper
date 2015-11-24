@@ -74,6 +74,7 @@ class ForumsSpider(CrawlSpider):
             epoch_time = post.xpath("//span[contains(@class,'byline_date')]/@data-timestamp").extract()[0]
             # item['create_date']= time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(epoch_time)))
             item['create_date'] = self.getDate(epoch_time)
+            item['domain'] = "".join(self.allowed_domains)
             msg = self.cleanText(" ".join(post.xpath('.//div[@class="post_message fonts_resizable"]/text()').extract()))
             item['post'] =msg
             item['topic'] = self.cleanText(topic)

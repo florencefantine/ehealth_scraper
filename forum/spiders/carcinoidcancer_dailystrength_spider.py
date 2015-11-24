@@ -97,6 +97,7 @@ class ForumsSpider(CrawlSpider):
         item['condition']=condition
         create_date= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.css('.discussion_text').xpath('./span/text()').extract()[0]).strip()
         item['create_date']= self.getDate(create_date)
+        item['domain'] = "".join(self.allowed_domains)
         item['post']=self.cleanText(post.css('.discussion_text').extract()[0])
         # item['tag']=condition
         item['topic'] = topic
@@ -111,8 +112,7 @@ class ForumsSpider(CrawlSpider):
             item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
             create_date= re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',post.xpath('./tr[1]/td[2]/div/table/tr/td/span[2]/text()').extract()[0]).strip()
             item['create_date']= self.getDate(create_date)
-            # soup = BeautifulSoup(post_msg, 'html.parser')
-            # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=self.cleanText(post.css('.discussion_text').extract()[0])
             # item['tag']='epilepsy'
             item['topic'] = topic

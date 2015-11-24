@@ -77,7 +77,7 @@ class ForumsSpider(CrawlSpider):
         item['condition'] = condition
         create_date = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[@class="nolink"][2]/text()').extract_first().replace('on','').replace('in','').strip()
         item['create_date'] = self.getDate(create_date)
-        
+        item['domain'] = "".join(self.allowed_domains)
         message = " ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract())
         if not message:
             message = " ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract())
@@ -100,6 +100,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date = post.xpath('./dt[@class="byline"]/span[@class="timestamp"]/text()').extract_first()
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
             message = " ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract())
             if not message:
                 message  = " ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract())

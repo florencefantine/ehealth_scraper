@@ -7,14 +7,12 @@
 from scrapy.exceptions import DropItem
 from scrapy import signals
 import hashlib
+from fluent import sender
+from fluent import event
 
 # from scrapy.contrib.exporter import CsvItemExporter
 
 # Pipeline to remove duplicate objects
-class CopyFieldPipeline(object):
-    def process_item(self,item,spider):
-        item['message']=item['post']
-        item['post'] = None
 
 
 class AddUUIDPipeline(object):
@@ -36,6 +34,24 @@ class DuplicatesLinksPipeline(object):
         else:
             self.checked_links.add(check)
             return item 
+
+
+class FluentDPipeline(object):
+    def __init__(self):
+        sender.setup('FM')
+
+    # send event to fluentd, with 'app.follow' tag
+    def process_item(self,item,spider):
+        event.Event('post', {
+          'user_id': item['author']
+          ,'post_id': item['post_id']
+          ,'@timestamp': item['create_date']
+          ,'message':item['post']
+          ,'topic':item['topic']
+          ,'condition':item['condition']
+          ,'url':item['url']
+        })
+
 # 
 # # Pipeline to make sure CSV columns export in the right order
 # class CSVPipeline(object):

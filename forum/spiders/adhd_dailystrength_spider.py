@@ -95,9 +95,8 @@ class ForumsSpider(CrawlSpider):
         item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
         item['condition']=condition
         item['create_date']= self.getDate(self.cleanText(post.css('.discussion_text').xpath('./span/text()').extract()[0]))
+        item['domain'] = "".join(self.allowed_domains)
         post_msg=self.cleanText(" ".join(post.css('.discussion_text').extract()))
-        # soup = BeautifulSoup(post_msg, 'html.parser')
-        # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
         # item['tag']=condition
         item['topic'] = topic
@@ -112,6 +111,7 @@ class ForumsSpider(CrawlSpider):
             item['author'] = post.css('.username').xpath("./a").xpath("text()").extract()[0].strip()
             item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
             item['create_date']= self.getDate(self.cleanText(" ".join(post.xpath('./tr[1]/td[2]/div/table/tr/td/span[2]/text()').extract())))
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=self.cleanText(" ".join(post.css('.discussion_text').extract()))
             # item['tag']=''
             item['topic'] = topic

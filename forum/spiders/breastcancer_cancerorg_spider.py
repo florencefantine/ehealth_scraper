@@ -66,6 +66,7 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
         node_item['author_link'] = ''
         node_item['condition'] = condition
         node_item['create_date'] = self.getDate(node_time)
+        node_item['domain'] = "".join(self.allowed_domains)
         node_item['post'] = node_message
         # node_item['tag'] = 'epilepsy'
         node_item['topic'] = subject
@@ -85,6 +86,7 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
             item['author_link'] = '*'
             item['condition'] = condition
             item['create_date'] = self.getDate(date)
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = self.cleanText(message)
             # item['tag'] = 'epilepsy'
             item['topic'] = subject

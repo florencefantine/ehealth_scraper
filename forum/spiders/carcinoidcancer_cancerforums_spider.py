@@ -93,8 +93,7 @@ class ForumsSpider(CrawlSpider):
             date=re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
             item['condition']=condition
             item['create_date']= self.getDate(date)
-            # soup = BeautifulSoup(post_msg, 'html.parser')
-            # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=self.cleanText(post.css('.postcontent').extract()[0])
             # item['tag']=''
             item['topic'] = topic

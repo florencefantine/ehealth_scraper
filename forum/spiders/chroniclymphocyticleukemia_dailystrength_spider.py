@@ -115,6 +115,7 @@ class ForumsSpider(CrawlSpider):
         create_date= self.cleanText(post.css('.discussion_text').xpath('./span/text()').extract()[0])
         item['create_date']= self.getDate(create_date)
         post_msg=self.cleanText(post.css('.discussion_text').extract()[0])
+        item['domain'] = "".join(self.allowed_domains)
         item['post']=post_msg
         # item['tag']='rheumatoid arthritis'
         item['topic'] = topic
@@ -131,6 +132,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             item['create_date']= self.cleanText(post.xpath('./tr[1]/td[2]/div/table/tr/td/span[2]/text()').extract()[0])
             post_msg=self.cleanText(post.css('.discussion_text').extract()[0])
+            item['domain'] = "".join(self.allowed_domains)
             item['post']=post_msg
             # item['tag']='rheumatoid arthritis'
             item['topic'] = topic

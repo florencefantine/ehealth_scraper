@@ -92,6 +92,7 @@ class ForumsSpider(CrawlSpider):
             item['author_link'] = re.sub(r'\&SID=\w+$','',author_link[i])
             item['condition'] = condition
             item['create_date'] = self.getDate(create_date[i]) #self.cleanText(create_date[i])    
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = self.cleanText(message[i])
             # item['tag']=''
             item['topic'] = topic

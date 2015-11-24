@@ -68,6 +68,7 @@ class ForumsSpider(Spider):
         item['author_link']=response.urljoin(post.xpath("./div/a/@href").extract()[0])
         item['condition'] = condition
         item['create_date']= self.cleanText(post.xpath('./article/span/time/@title').extract()[0])
+        item['domain'] = "".join(self.allowed_domains)
         post_msg=self.cleanText(post.xpath('./article/div/p').extract()[0])
         item['post']=post_msg
         # item['tag']='rheumatoid arthritis'
@@ -84,6 +85,7 @@ class ForumsSpider(Spider):
             item['author_link']=response.urljoin(post.xpath("./article/span[1]/a[1]/@href").extract()[0])
             item['condition'] = condition
             item['create_date']= self.getDate(self.cleanText(post.xpath('./article/span[2]/time/@title').extract()[0]))
+            item['domain'] = "".join(self.allowed_domains)
             post_msg=self.cleanText(post.xpath('./article/div[1]/p').extract()[0])
             item['post']=post_msg
             item['topic'] = topic

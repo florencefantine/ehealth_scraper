@@ -112,7 +112,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date = ''.join(post.xpath('.//tr[@class="bbp-reply-header"]//text()').extract()).strip()
             item['create_date']= self.getDate(self.getDate(self.cleanText(create_date).replace("at","")).strip())
-            
+            item['domain'] = "".join(self.allowed_domains)
             message = ''.join(post.xpath('.//td[@class="bbp-reply-content"]//text()').extract())
             item['post'] = self.cleanText(message).replace("[Report This Post]","").strip()
             # item['tag']=''

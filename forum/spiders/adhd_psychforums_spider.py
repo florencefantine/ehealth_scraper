@@ -79,7 +79,7 @@ class ForumsSpider(CrawlSpider):
             
             create_date = ''.join(post.xpath('.//p[@class="author"]/text()').extract()).replace('by','')
             item['create_date'] = self.getDate(self.cleanText(create_date))
-           
+            item['domain'] = "".join(self.allowed_domains)
             message = ''.join(post.xpath('.//div[@class="content"]/text()').extract())
             item['post'] = self.cleanText(message)
             # item['tag']='adhd'

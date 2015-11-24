@@ -87,7 +87,7 @@ class ForumsSpider(CrawlSpider):
         #create_date = ''.join(sel.xpath('//span[@class="post-meta"]/text()').extract()).replace("Posted by","").replace("to","")
         create_date = sel.xpath('//header[@class="node-header"]//time/text()').extract()[0]
         item['create_date']= self.getDate(create_date)
-        
+        item['domain'] = "".join(self.allowed_domains)
         message = ''.join(sel.xpath('//header[@class="node-header"]//div[@class="field-items"]//text()').extract())
         item['post'] = self.cleanText(message)
         item['tag']=''
@@ -103,7 +103,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date = post.xpath('.//span[@class="date-time"]/text()').extract()[0]
             item['create_date']= self.getDate(create_date)
-            
+            item['domain'] = "".join(self.allowed_domains)
             message = ''.join(post.xpath('.//div[@class="comment-content"]//text()').extract())
             item['post'] = self.cleanText(message)
             # item['tag']='adhd'

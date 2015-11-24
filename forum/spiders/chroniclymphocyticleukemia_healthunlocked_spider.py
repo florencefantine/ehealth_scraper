@@ -102,6 +102,7 @@ class HealthUnlocked(scrapy.Spider):
 		item['author_link'] = author_link
 		item['condition']=condition
 		item['create_date'] = self.getDate(posted_date)
+		item['domain'] = "".join(self.allowed_domains)
 		item['post'] = author_all_text
 		item['topic'] = topic
 		item['url'] = response.url

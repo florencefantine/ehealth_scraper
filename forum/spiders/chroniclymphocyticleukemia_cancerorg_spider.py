@@ -58,6 +58,7 @@ class CancerCompass(scrapy.Spider):
 		item['author_link'] = ''
 		item['condition']=condition
 		item['create_date'] = self.getDate(response.xpath(submitted_date_xpath).extract()[0])
+		item['domain'] = "".join(self.allowed_domains)
 		item['post'] = self.cleanText(response.xpath(all_text_data_xpath).extract()[0])
 		item['topic'] = subject
 		item['url'] = response.url

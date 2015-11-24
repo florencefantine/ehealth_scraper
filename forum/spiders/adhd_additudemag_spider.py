@@ -85,6 +85,7 @@ class ForumsSpider(CrawlSpider):
             item['condition'] = condition
             create_date = self.getDate( self.cleanText( re.sub(r'(Posted:|\[|])','', ''.join(post.xpath('.//td[@class="tableRowHeading"]//text()').extract()) ).replace("Ignore","") ))
             item['create_date']= create_date
+            item['domain'] = "".join(self.allowed_domains)
             item['post'] = self.cleanText(''.join(post.xpath('.//div[@class="post"]//text()').extract()))
             # item['tag']='adhd'
             item['topic'] = topic

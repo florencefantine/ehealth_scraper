@@ -75,6 +75,7 @@ class ForumsSpider(CrawlSpider):
             item['condition']=condition
             create_date = post.xpath('.//td[@class="gensmall" and @width="100%"]/div[@style="float: right;"]/text()').extract_first().strip()
             item['create_date'] = self.getDate(create_date)
+            item['domain'] = "".join(self.allowed_domains)
 
             message = " ".join(post.xpath('.//div[@class="postbody"]/text()').extract())
             item['post'] = self.cleanText(message)

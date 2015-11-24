@@ -18,3 +18,4 @@ class PostItemsList(scrapy.Item):
     tag=scrapy.Field()
     url = scrapy.Field()
     condition=scrapy.Field()    
+    domain=scrapy.Field()

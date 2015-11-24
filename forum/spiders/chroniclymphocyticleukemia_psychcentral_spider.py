@@ -70,6 +70,7 @@ class PsychCentral(scrapy.Spider):
 		item['author_link'] = response.css('.bigusername').xpath('@href').extract_first()
 		item['condition']=condition
 		item['create_date'] = self.getDate(date)
+		item['domain'] = "".join(self.allowed_domains)
 		item['post'] = self.cleanText(post_text)
 		item['topic'] = topic
 		item['url'] = response.url

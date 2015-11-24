@@ -23,7 +23,7 @@ import time
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
     name = "adhd_aaddukproboards_spider"
-    allowed_domains = ["proboards.com"]
+    allowed_domains = ["aadduk.proboards.com"]
     start_urls = [
         "http://aadduk.proboards.com/",
     ]
@@ -83,9 +83,8 @@ class ForumsSpider(CrawlSpider):
             item['author'] = " ".join(post.xpath('.//a[contains(@class,"user-link user")]/text()').extract())
             item['author_link'] = " ".join(post.xpath('.//a[contains(@class,"user-link user")]/@href').extract())
             item['condition'] = condition
-            
             item['create_date'] = self.getDate( post.xpath('.//abbr[@class="time"]/text()').extract()[0])
-           
+            item['domain'] = "".join(self.allowed_domains)
             message = " ".join(post.xpath('.//div[@class="message"]/text()').extract())
             item['post'] = self.cleanText(message)
             # item['tag']=''

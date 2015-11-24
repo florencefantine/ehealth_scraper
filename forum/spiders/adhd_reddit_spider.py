@@ -77,6 +77,7 @@ class ForumsSpider(CrawlSpider):
             item['author_link'] = ''.join(post.xpath('.//a[contains(@class, "author may-blank")]/@href').extract())
             item['condition']=condition
             item['create_date']= self.getDate(''.join(post.xpath('.//time/@title').extract()))
+            item['domain'] = "".join(self.allowed_domains)
             message = ''.join(post.xpath('.//div[@class="usertext-body may-blank-within md-container "]//text()').extract())
             item['post'] = self.cleanText(message)
             # item['tag']='adhd'

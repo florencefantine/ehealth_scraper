@@ -72,13 +72,14 @@ class ForumsSpider(CrawlSpider):
             item = PostItemsList()
             create_date = post.xpath('.//span[@class="x-post-time"]/text()').extract_first()
             if create_date:
-                item['create_date'] = self.getDate(create_date)
                 item['author'] = post.xpath('.//div[@class="authorsn x-author"]/text()').extract_first()
                 item['author_link'] = '' 
                 if not item['author']:
                     item['author'] = post.xpath('.//a[@data-t="post-usersntxt"]/text()').extract_first()
                     item['author_link'] = post.xpath('.//a[@data-t="post-usersntxt"]/@href').extract_first()
                 item['condition']=condition
+                item['create_date'] = self.getDate(create_date)
+                item['domain'] = "".join(self.allowed_domains)
                 message = " ".join(post.xpath('.//div[@class="x-post-content"]/text()').extract())
                 item['post'] = self.cleanText(message)
                 # item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="x-post-content"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
