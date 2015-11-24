@@ -5,7 +5,9 @@ from scrapy.spiders import CrawlSpider, Rule
 import re
 from bs4 import BeautifulSoup
 from forum.items import PostItemsList
-
+import string
+import dateparser
+import time
 
 class EpilepsyCancerSpiderSpider(CrawlSpider):
     name = 'breastcancer_cancerorg_spider'
@@ -23,6 +25,17 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
              follow=True),
     )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def cleanText(self,text):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
@@ -49,11 +62,11 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
         posts = response.xpath('//table[@class="comment comment-forum"]')
 
         node_item['author'] = node_author
-        node_item['author_link'] = '*'
+        node_item['author_link'] = ''
         node_item['condition'] = condition
-        node_item['create_date'] = node_time
+        node_item['create_date'] = self.getDate(node_time)
         node_item['post'] = node_message
-        node_item['tag'] = 'epilepsy'
+        # node_item['tag'] = 'epilepsy'
         node_item['topic'] = subject
         node_item['url'] = url
 
@@ -70,9 +83,9 @@ class EpilepsyCancerSpiderSpider(CrawlSpider):
             item['author'] = author
             item['author_link'] = '*'
             item['condition'] = condition
-            item['create_date'] = date
+            item['create_date'] = self.getDate(date)
             item['post'] = self.cleanText(message)
-            item['tag'] = 'epilepsy'
+            # item['tag'] = 'epilepsy'
             item['topic'] = subject
             item['url'] = url
 

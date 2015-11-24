@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 import logging
 from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -22,17 +26,11 @@ from bs4 import BeautifulSoup
 class ForumsSpider(CrawlSpider):
     name = "hiv_topix_spider"
     allowed_domains = ["topix.com"]
-#    start_urls = [
-#        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
-#    ]
     start_urls = [
         "http://www.topix.com/forum/health/hiv-aids",
     ]
 
     rules = (
-            # Rule to go to the single product pages and run the parsing function
-            # Excludes links that end in _W.html or _M.html, because they point to 
-            # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
                 restrict_xpaths='//table[contains(@class,"thread_table")]/tr',
                 canonicalize=True,
@@ -45,8 +43,17 @@ class ForumsSpider(CrawlSpider):
             ), callback='parsePost', follow=True),
         )
 
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
@@ -56,6 +63,7 @@ class ForumsSpider(CrawlSpider):
             return items
         topic = response.xpath('//div[contains(@class,"str-forum-header")]/h1/text()').extract()[0]
         url = response.url
+        condition = "hiv"
         for post in posts:
             item = PostItemsList()
             if len(post.css('.regsn'))>0:
@@ -66,13 +74,12 @@ class ForumsSpider(CrawlSpider):
                 item['author_link']=''
             else:
                 continue
-            item['create_date']= self.parseText(str=post.css('.x-comment-info').extract()[0])
-            post_msg= self.parseText(str=post.css('.x-post-content').extract()[0])
-            item['post']=post_msg
-            item['tag']='hiv'
+            item['condition'] = condition
+            create_date =re.sub(r'^#\d+','',self.parseText(str=post.css('.x-comment-info').extract()[0]))
+            item['create_date']= self.getDate(create_date)
+            item['post']=self.parseText(" ".join(post.css('.x-post-content').extract()))
             item['topic'] = topic
             item['url']=url
-            logging.info(post_msg)
             items.append(item)
         return items
 

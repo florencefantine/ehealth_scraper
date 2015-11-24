@@ -5,6 +5,9 @@ from forum.items import PostItemsList
 import logging
 import re
 from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
 
 class CancerForum(CrawlSpider):
     name = 'lymphoma_cancerforums_spider'
@@ -20,10 +23,23 @@ class CancerForum(CrawlSpider):
              callback='parse_item', follow=True),
     )
 
-    def cleanText(self,text):
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
+    def cleanText(self,text,printableOnly=True):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
-        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        text = re.sub("(-+| +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
         return text 
     
     def parse_item(self, response):
@@ -55,7 +71,7 @@ class CancerForum(CrawlSpider):
                 item['author'] = author
                 item['author_link'] = author_link
                 item['condition'] = condition
-                item['create_date'] = create_date
+                item['create_date'] = self.getDate(create_date)
                 item['post'] = message
                 item['tag'] = 'Lymphoma'
                 item['topic'] = subject

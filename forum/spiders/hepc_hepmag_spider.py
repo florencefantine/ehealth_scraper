@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -11,6 +12,9 @@ import re
 from bs4 import BeautifulSoup
 import urlparse
 import urllib
+import string
+import dateparser
+import time
 
 
 ## LOGGING to file
@@ -45,6 +49,17 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
     
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+
     def urlRemove(self,url,keyToFind):
         url_parts = list(urlparse.urlparse(url))
         query = dict(urlparse.parse_qsl(url_parts[4]))
@@ -56,15 +71,18 @@ class ForumsSpider(CrawlSpider):
         return urlparse.urlunparse(url_parts)
     
 
-    def cleanText(self,text):
+    def cleanText(self,text,printableOnly=True):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
-        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        text = re.sub("(-+| +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
         return text 
     
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePostsList(self,response):
+        condition ="hepatitis-c"
         try:
             document = lxml.html.fromstring(response.body)
             document.make_links_absolute(base_url=response.url, resolve_base_href=True)
@@ -78,7 +96,9 @@ class ForumsSpider(CrawlSpider):
             poster = postWrapper.cssselect(".poster")[0]
             post['author'] = poster.xpath("./h4/a/text()")[0]
             post['author_link'] = poster.xpath("./h4/a/@href")[0]
-            post['create_date'] = self.cleanText(" ".join(keyinfo.cssselect('.smalltext')[0].xpath("text()")))
+            post['condition'] = condition
+            create_date = self.cleanText(" ".join(keyinfo.cssselect('.smalltext')[0].xpath("text()")))
+            post['create_date'] = self.getDate(create_date)
             post['topic'] = keyinfo.cssselect('h5')[0].xpath("./a/text()")[0]
             post['post'] = self.cleanText(" ".join(postWrapper.cssselect(".post")[0].xpath("./div/text()")))
             post['url'] = self.urlRemove(response.url,"PHPSESSID")

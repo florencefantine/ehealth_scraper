@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule, Spider, Request
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -7,6 +8,9 @@ import re
 import logging
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import string
+import dateparser
+import time
 
 # import lxml.html
 # from lxml.etree import ParserError
@@ -49,6 +53,17 @@ class ForumsSpider(Spider):
     # driver = webdriver.Chrome('G:\\tools\\chromedriver.exe')
     driver = webdriver.PhantomJS()
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+
     def parse(self, response):
         self.driver.get(response.url)
         el = Selector(text=self.driver.page_source).xpath('//*[@id="content"]/table/tbody/tr/td[1]/a/@href')
@@ -76,6 +91,15 @@ class ForumsSpider(Spider):
                 return requestList
         self.driver.close()
 
+
+    def cleanText(self,text,printableOnly=True):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("(-+| +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
+        return text 
+
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePost(self,response):
@@ -85,10 +109,11 @@ class ForumsSpider(Spider):
         if len(sel.xpath('//*[@id="content"]/table/thead/tr/th[1]'))==0:
             return items
         topic = ''
-        item='hiv'
+        # item='hiv'
+        condition = "hiv"
         url = response.url
         item = PostItemsList()
-        item['author'] = sel.xpath('//*[@id="content"]/table/thead/tr/th[1]/span/text()').extract()[0]
+        item['author'] = self.cleanText(sel.xpath('//*[@id="content"]/table/thead/tr/th[1]/span/text()').extract()[0])
         item['author_link']=""
         date = sel.xpath('//*[@id="content"]/table/thead/tr/th[2]/span/text()').extract()[0]
 
@@ -97,22 +122,22 @@ class ForumsSpider(Spider):
         soup = BeautifulSoup(post_msg, 'html.parser')
         post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
-        item['tag']='hiv'
+        # item['tag']='hiv'
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)
         items.append(item)
 
         item = PostItemsList()
-        item['author'] = sel.xpath('//*[@id="content"]/table/tbody/tr[2]/td/div[1]').extract()[0]
+        item['author'] = self.cleanText(sel.xpath('//*[@id="content"]/table/tbody/tr[2]/td/div[1]').extract()[0])
         item['author_link']=""
         item['condition'] = condition
-        item['create_date'] = date
+        item['create_date'] = self.getDate(date)
         post_msg = sel.xpath('//*[@id="content"]/table/tbody/tr[2]/td/p').extract()[0]
         soup = BeautifulSoup(post_msg, 'html.parser')
         post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
         item['post']=post_msg
-        item['tag']='hiv'
+        # item['tag']='hiv'
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)

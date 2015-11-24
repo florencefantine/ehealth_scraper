@@ -1,86 +1,139 @@
+# -*- coding: utf-8 -*-
 import scrapy
+from scrapy.contrib.spiders import CrawlSpider, Rule
+from scrapy.contrib.linkextractors import LinkExtractor
+from scrapy.selector import Selector
 from forum.items import PostItemsList
-import time
-from selenium import webdriver
-from bs4 import BeautifulSoup
 import re
 import logging
-class DailyStrength(scrapy.Spider):
-	name = "chroniclymphocyticleukemia_dailystrength_spider"
-	allowed_domains = ["dailystrength.org"]
-	start_urls = [
-		"http://www.dailystrength.org/c/Chronic-Lymphocytic-Leukemia-CLL/forum",
-	]
-	
-	
-	def cleanText(self, text):
-		soup = BeautifulSoup(text, 'html.parser')
-		text = soup.get_text();
-		text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+", ' ', text).strip()
-		return text 
+from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
+# import lxml.html
+# from lxml.etree import ParserError
+# from lxml.cssselect import CSSSelector
+
+## LOGGING to file
+#import logging
+#from scrapy.log import ScrapyFileLogObserver
+
+#logfile = open('testlog.log', 'w')
+#log_observer = ScrapyFileLogObserver(logfile, level=logging.DEBUG)
+#log_observer.start()
+
+# Spider for crawling Adidas website for shoes
+class ForumsSpider(CrawlSpider):
+    name = "chroniclymphocyticleukemia_dailystrength_spider"
+    allowed_domains = ["dailystrength.org"]
+#    start_urls = [
+#        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
+#    ]
+    start_urls = [
+        "http://www.dailystrength.org/c/Chronic-Lymphocytic-Leukemia-CLL/forum",
+    ]
+
+    rules = (
+            # Rule to go to the single product pages and run the parsing function
+            # Excludes links that end in _W.html or _M.html, because they point to 
+            # configuration pages that aren't scrapeable (and are mostly redundant anyway)
+            Rule(LinkExtractor(
+                restrict_xpaths='//ol[contains(@class, "search_list")]/li',
+                canonicalize=True,
+                deny='http://www.dailystrength.org/people/',
+                ), callback='parsePost', follow=True),
+
+            Rule(LinkExtractor(
+                restrict_xpaths='//*[@id="pager"]',
+                canonicalize=True,
+                deny='http://www.dailystrength.org/people/',
+                ), follow=True),
+
+            Rule(LinkExtractor(
+                restrict_xpaths='//tr[contains(@class, "sectiontableentry2")]',
+                canonicalize=True,
+                deny='http://www.dailystrength.org/people/',
+                ), callback='parsePost', follow=True),
+            Rule(LinkExtractor(
+                restrict_xpaths='//tr[contains(@class, "sectiontableentry1")]',
+                deny='http://www.dailystrength.org/people/',
+                canonicalize=True,
+                ), callback='parsePost'),
+            Rule(LinkExtractor(
+                restrict_xpaths='//table[contains(@class, "discussion_listing_main")]/tr/td[2]',
+                canonicalize=True,
+                deny='http://www.dailystrength.org/people/',
+                ), callback='parsePost', follow=True),
+
+            # Rule to follow arrow to next product grid
+            Rule(LinkExtractor(
+                restrict_xpaths='//a[contains(@class, "medium")]',
+                deny='http://www.dailystrength.org/people/',
+                canonicalize=True,
+            ), follow=True),
+            # Rule(LinkExtractor(
+            #     restrict_xpaths='//*[@id="col1"]/div[2]/div[2]/div[1]/table/tr[3]/td[1]/a[1]/@href',
+            # ), follow=True),
+        )
+
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+
+    def cleanText(self,text):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        return text 
 
 
-	def parse(self, response):
-		driver = webdriver.PhantomJS()
-		driver.get(response.url)
-		links_xpath = "//table[@class='discussion_listing_main'][2]//tr/td[2]/a"
-		links_lists = []
-		for pageno in range(1,100):
-			makeurl ="http://www.dailystrength.org/c/Chronic-Lymphocytic-Leukemia-CLL/forum/page-%s"%pageno
-			driver.get(makeurl)
-			time.sleep(3)
-			get_links = driver.find_elements_by_xpath(links_xpath)
-			logging.info("links:"+links_xpath)
-			total_links = len(get_links)
-			if total_links == 0:
-				break
-			for i in get_links:
-				links_lists.append(i.get_attribute('href'))
-		driver.close()
-		for url in links_lists:
-			logging.info("url:"+url)
-			yield scrapy.Request(url,callback=self.get_sub_data)
+    # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
+    # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
+    def parsePost(self,response):
+        logging.info(response)
+        sel = Selector(response)
+        posts = sel.xpath('//*[@id="col1"]/div[2]/div[2]/div[1]/table[4]')
+        items = []
+        condition = "chronic lymphocytic leukemia"
+        if len(sel.xpath('//div[contains(@class, "discussion_topic_header_subject")]'))==0:
+            return items
+        topic = sel.xpath('//div[contains(@class, "discussion_topic_header_subject")]/text()').extract()[0]
+        url = response.url
+        post = sel.xpath('//table[contains(@class, "discussion_topic")]')
+        item = PostItemsList()
+        item['author'] = post.css('.username').xpath("./a").xpath("text()").extract()[0].strip()
+        item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
+        item['condition'] = condition
+        create_date= self.cleanText(post.css('.discussion_text').xpath('./span/text()').extract()[0])
+        item['create_date']= self.getDate(create_date)
+        post_msg=self.cleanText(post.css('.discussion_text').extract()[0])
+        item['post']=post_msg
+        # item['tag']='rheumatoid arthritis'
+        item['topic'] = topic
+        item['url']=url
+        logging.info(post_msg)
+        items.append(item)
 
-
-	def get_sub_data(self,response):
-		logging.info("get_sub_data")
-		author_name_xpath = "//table[@class='discussion_topic']//p[@class='username']/a/text()"
-		author_link_xpath = "//table[@class='discussion_topic']//p[@class='username']/a/@href"
-		author_posted_xpath = "//table[@class='discussion_topic']//div/span[@class='graytext']/text()"
-		author_all_text_xpath = "//table[@class='discussion_topic']//div[@class='discussion_text longtextfix485']/text()"
-
-		author_name = response.xpath(author_name_xpath).extract()
-		author_name = str(author_name[0])
-		author_name = author_name.replace("\t","")
-
-		author_name = author_name.replace(',',' ')
-		author_link = response.xpath(author_link_xpath).extract()
-		author_link  = author_link[0]
-		author_link = "http://www.dailystrength.org%s"%author_link
-		author_posted = response.xpath(author_posted_xpath).extract()
-		author_posted = author_posted[0]
-		author_posted = author_posted.replace(',','')
-		author_posted = author_posted.replace('Posted on','')
-
-		author_all_text = response.xpath(author_all_text_xpath).extract()
-		author_all_text = str(author_all_text[0])
-		author_all_text = author_all_text.replace(',','')
-		author_all_text = author_all_text.replace('\t','')
-		author_all_text = author_all_text.replace('  ','')
-		author_all_text = author_all_text.replace('\n','')
-
-		topic = response.xpath("//div[contains(@class,'discussion_topic_header_subject')]/text()").extract()[0]
-
-		item = PostItemsList()
-
-		item['author'] = author_name
-		item['author_link'] = author_link
-		item['condition']="chronic lymphocytic leukemia"
-		item['create_date'] = author_posted
-		item['post'] = author_all_text
-		item['topic'] = topic
-		item['url'] = response.url
-		print(author_all_text)
-		logging.info(item.__str__())
-		yield item
-
+        for post in posts:
+            item = PostItemsList()
+            if len(post.css('.username')) == 0:
+                continue
+            item['author'] = post.css('.username').xpath("./a").xpath("text()").extract()[0].strip()
+            item['author_link']=response.urljoin(post.css('.username').xpath("./a/@href").extract()[0])
+            item['condition'] = condition
+            item['create_date']= self.cleanText(post.xpath('./tr[1]/td[2]/div/table/tr/td/span[2]/text()').extract()[0])
+            post_msg=self.cleanText(post.css('.discussion_text').extract()[0])
+            item['post']=post_msg
+            # item['tag']='rheumatoid arthritis'
+            item['topic'] = topic
+            item['url']=url
+            logging.info(post_msg)
+            items.append(item)
+        return items

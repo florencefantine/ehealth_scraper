@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import Spider, Request, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -7,6 +8,9 @@ import re
 import logging
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import string
+import dateparser
+import time
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -35,21 +39,18 @@ class ForumsSpider(Spider):
     ]
 
     driver = webdriver.PhantomJS()
-    # driver = webdriver.Chrome('G:\\tools\\chromedriver.exe')
-    # rules = (
-    #         # Rule to go to the single product pages and run the parsing function
-    #         # Excludes links that end in _W.html or _M.html, because they point to
-    #         # configuration pages that aren't scrapeable (and are mostly redundant anyway)
-    #         Rule(LinkExtractor(
-    #             restrict_xpaths='//*[@id="forum-topic-list"]/table[2]/tr/td[2]/a',
-    #             canonicalize=True,
-    #             ), callback='parsePost', follow=True),
-    #         # Rule to follow arrow to next product grid
-    #         # Rule(LinkExtractor(
-    #         #     restrict_xpaths="//ul[contains(@class, 'pager')]",
-    #         # ), callback='parsePost', follow=True),
-    #     )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def parse(self, response):
         self.driver.get(response.url)
         el = Selector(text=self.driver.page_source).xpath('//*[@id="forum-topic-list"]/table[2]/tbody/tr/td[2]/a/@href')
@@ -59,14 +60,11 @@ class ForumsSpider(Spider):
 
         el = Selector(text=self.driver.page_source).xpath('//ul[contains(@class, "pager")]/li/a/@href')
         for r in el.extract():
+            # logging.info("url: "+r)
             requestList.append(Request(response.urljoin(r)))
 
         if len(requestList)>0:
             return requestList
-        # el = Selector(text=self.driver.page_source).xpath("//ul[contains(@class, 'pager')]/li/a/@href")
-        # if len(el.extract())>0:
-        #     req = Request(el.extract()[0])
-        #     return req
         self.driver.close()
 
 
@@ -75,12 +73,12 @@ class ForumsSpider(Spider):
     def parsePost(self,response):
         items = []
         self.driver.get(response.url)
-        logging.info(response)
+        logging.info(">>> "+response.body)
         sel = Selector(text=self.driver.page_source)
         comment = sel.xpath('//*[@id="forum-comments"]')
         topic = sel.xpath('//div[contains(@class, "forum-post")]')[0].xpath('.//div[contains(@class, "forum-post-title")]/text()').extract()[0].strip()
         url = response.url
-
+        condition = "multiple sclerosis"
         post = sel.xpath('//div[contains(@class, "forum-post")]')[0]
         item = PostItemsList()
         if len(post.css('.author-name').xpath('./a/text()'))>0:
@@ -89,13 +87,15 @@ class ForumsSpider(Spider):
         else:
             item['author']=''
             item['author_link']=''
-        item['create_date']= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
+        item['condition'] = condition
+        create_date= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
+        item['create_date']= self.getDate(create_date)
         post_msg= self.parseText(str=post.css('.forum-post-content').extract()[0])
         item['post']=post_msg
-        item['tag']='Multiple Sclerosis'
+        # item['tag']='Multiple Sclerosis'
         item['topic'] = topic
         item['url']=url
-        logging.info(post_msg)
+        # logging.info(post_msg)
         items.append(item)
 
         if len(comment)==0:
@@ -113,13 +113,15 @@ class ForumsSpider(Spider):
                     item['author_link']=''
             else:
                 continue
-            item['create_date']= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
+            item['condition'] = condition
+            create_date= self.parseText(str=post.xpath('./div[1]/div').extract()[0])
+            item['create_date']= self.getDate(create_date)
             post_msg= self.parseText(str=post.css('.forum-post-content').extract()[0])
             item['post']=post_msg
-            item['tag']='Multiple Sclerosis'
+            # item['tag']='Multiple Sclerosis'
             item['topic'] = topic
             item['url']=url
-            logging.info(post_msg)
+            # logging.info(post_msg)
             items.append(item)
         return items
 

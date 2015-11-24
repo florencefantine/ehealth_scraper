@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 from bs4 import BeautifulSoup
 import re
 import logging
+import string
+import dateparser
+import time
 
 ## LOGGING to file
 #import logging
@@ -20,7 +24,11 @@ class ForumsSpider(CrawlSpider):
     name = "all_healthboards_spider"
     allowed_domains = ["www.healthboards.com"]
     start_urls = [
+        "http://www.healthboards.com/boards/cancer-kidney/",
         "http://www.healthboards.com/boards/epilepsy/",
+        "http://www.healthboards.com/boards/hiv-prevention/",
+        "http://www.healthboards.com/boards/lymphomas/",
+        "http://www.healthboards.com/boards/multiple-sclerosis/"
     ]
 
     rules = (
@@ -38,12 +46,25 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
-    def cleanText(self,text):
+    def cleanText(self,text,printableOnly=True):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
-        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        text = re.sub("(-+| +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
         return text 
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def parsePostsList(self, response):
         print(response.url)
         items = []
@@ -72,10 +93,10 @@ class ForumsSpider(CrawlSpider):
 
             item['author'] = author
             item['author_link'] = author_link
-            item['condition'] = condition
-            item['create_date'] = create_date
+            item['condition'] = condition.lower()
+            item['create_date'] = self.getDate(create_date)
             item['post'] = self.cleanText(message)
-            item['tag'] = ''
+            # item['tag'] = ''
             item['topic'] = subject
             item['url'] = url
 

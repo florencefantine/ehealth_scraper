@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 from bs4 import BeautifulSoup
 import logging
+import string
+import dateparser
+import time
 
 ## LOGGING to file
 #import logging
@@ -38,7 +42,19 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def cleanText(self,text):
+        # logging.info(text)
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
         text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
@@ -58,18 +74,19 @@ class ForumsSpider(CrawlSpider):
         item['author'] = response.xpath('//ul[@class="navigation byline"]/li/a[contains(@href,"profile")]/text()').extract_first()
         item['author_link'] = response.xpath('//ul[@class="navigation byline"]/li/a[contains(@href,"profile")]/@href').extract_first()
         item['condition'] = condition
-        item['create_date'] = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[@class="nolink"][2]/text()').extract_first().replace('on','').replace('in','').strip()
+        create_date = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//ul[@class="navigation byline"]/li/a[@class="nolink"][2]/text()').extract_first().replace('on','').replace('in','').strip()
+        item['create_date'] = self.getDate(create_date)
         
-        message = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()
+        message = " ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract())
         if not message:
-            message = response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract()
+            message = " ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract())
         item['post'] = self.cleanText(message)
 
         # item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
         # if not item['post']:
         #     item['post'] = re.sub('\s+',' '," ".join(response.xpath('//div[@class="xg_module xg_module_with_dialog"]//div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
 
-        item['tag']=''
+        # item['tag']=''
         item['topic'] = topic
         item['url']=url
         logging.info(item.__str__)
@@ -79,11 +96,12 @@ class ForumsSpider(CrawlSpider):
             item = PostItemsList()
             item['author'] = post.xpath('./dt[@class="byline"]/a[contains(@href,"user")]/text()').extract_first()
             item['author_link'] = post.xpath('./dt[@class="byline"]/a[contains(@href,"user")]/@href').extract_first()
-            item['create_date'] = post.xpath('./dt[@class="byline"]/span[@class="timestamp"]/text()').extract_first()
-
-            message = post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()
+            item['condition'] = condition
+            create_date = post.xpath('./dt[@class="byline"]/span[@class="timestamp"]/text()').extract_first()
+            item['create_date'] = self.getDate(create_date)
+            message = " ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract())
             if not message:
-                message  = post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract()
+                message  = " ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract())
             item['post'] = self.cleanText(message)
 
             # item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/p/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
@@ -91,9 +109,8 @@ class ForumsSpider(CrawlSpider):
             # if not item['post']:
             #     item['post'] = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="description"]/div[@class="xg_user_generated"]/text()').extract()).replace("\t","").replace("\n","").replace("\r",""))
 
-            item['tag']='epilepsy'
+            # item['tag']='epilepsy'
             item['topic'] = topic
             item['url']=url
-            logging.info(item.__str__)
             items.append(item)
         return items

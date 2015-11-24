@@ -7,7 +7,7 @@
 	pip install lxml
 	pip install chardet
 	pip install cssselect
-
+	pip install dateparser
 
 ### play around with scrapy to understand how it does css or xpath selection 
 

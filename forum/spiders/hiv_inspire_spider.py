@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 import logging
 from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -20,11 +24,8 @@ from bs4 import BeautifulSoup
 
 # Spider for crawling Adidas website for shoes
 class ForumsSpider(CrawlSpider):
-    name = "hiv_inspire_spider"
+    name = "hiv_healthboards_spider"
     allowed_domains = ["inspire.com"]
-#    start_urls = [
-#        "http://www.healingwell.com/community/default.aspx?f=23&m=1001057",
-#    ]
     start_urls = [
         "https://www.inspire.com/groups/hiv-and-aids/",
     ]
@@ -51,6 +52,17 @@ class ForumsSpider(CrawlSpider):
             ), callback='parsePost', follow=True),
         )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePost(self,response):
@@ -66,10 +78,11 @@ class ForumsSpider(CrawlSpider):
         item['author'] = self.parseText(str=sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a').extract()[0].strip())
         item['author_link']=response.urljoin(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a/@href').extract()[0])
         item['condition'] = condition
-        item['create_date'] = self.parseText(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/text()').extract()[1].split('\n')[1].strip()[1:])
+        create_date = self.parseText(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/text()').extract()[1].split('\n')[1].strip()[1:])
+        item['create_date'] = self.getDate(create_date)
         post_msg=self.parseText(str=sel.css('.content-primary-post').xpath('./div[2]/p').extract()[0])
         item['post']=post_msg
-        item['tag']='hiv'
+        # item['tag']='hiv'
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)
@@ -89,10 +102,9 @@ class ForumsSpider(CrawlSpider):
             item['create_date'] = self.parseText(str=post.css('.post-info').xpath('./ul/li[3]').extract()[0])
             post_msg=self.parseText(str=post.xpath('./p').extract()[0])
             item['post']=post_msg
-            item['tag']='hiv'
+            # item['tag']='hiv'
             item['topic'] = topic
             item['url']=url
-            logging.info(post_msg)
             items.append(item)
         return items
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 import logging
 from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -42,6 +46,17 @@ class ForumsSpider(CrawlSpider):
                 restrict_xpaths="/html/body/center/a",
             ), follow=True),
         )
+    
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
 
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
@@ -52,13 +67,16 @@ class ForumsSpider(CrawlSpider):
         items = []
         if len(posts)==0:
             return items
+        condition ="renal cell carcinoma"
         topic = response.xpath('/html/body/center/table[4]/tr/td/table[2]/tr[1]/td[2]/p[1]/text()[2]').extract()[0].strip()
         url = response.url
         for post in posts:
             item = PostItemsList()
             item['author'] = post.xpath("./td[1]/text()").extract()[3]
             item['author_link']=''
-            item['create_date']= self.parseText(str=post.xpath('./td[1]/text()').extract()[1])
+            item['condition'] = condition
+            create_date= self.parseText(str=post.xpath('./td[1]/text()').extract()[1])
+            item['create_date']= self.getDate(create_date)
             post_msg= self.parseText(str=post.xpath("./td[2]/p[2]").extract()[0])
             item['post']=post_msg
             item['tag']='rheumatoid arthritis'
@@ -71,3 +89,4 @@ class ForumsSpider(CrawlSpider):
     def parseText(self, str):
         soup = BeautifulSoup(str, 'html.parser')
         return re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+        

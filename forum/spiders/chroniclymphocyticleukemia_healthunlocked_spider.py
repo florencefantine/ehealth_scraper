@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from forum.items import PostItemsList
 import time
@@ -6,7 +7,10 @@ import json
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import re
-
+import string
+import dateparser
+import time
+import logging
 
 class HealthUnlocked(scrapy.Spider):
 	name = "chroniclymphocyticleukemia_healthunlocked_spider"
@@ -21,16 +25,33 @@ class HealthUnlocked(scrapy.Spider):
 		text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+", ' ', text).strip()
 		return text 
 
+	def getDate(self,date_str):
+	    try:
+	        date = dateparser.parse(date_str)
+	        epoch = int(date.strftime('%s'))
+	        create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+	        return create_date
+	    except Exception:
+	        #logging.error(">>>>>"+date_str)
+	        return date_str
+            
 	def parse(self, response):
 		driver = webdriver.PhantomJS()
+		# driver = webdriver.Firefox()
 		driver.get(response.url)
-# 		view_all_xpath = "//a[text()='View all posts']"
-		view_all_xpath='//*[@id="community-posts-panel"]/div/a'
-		driver.find_element_by_xpath(view_all_xpath).click()
 		time.sleep(4)
+		logging.info(response.body)
+		view_all_xpath = "/a[contains(@href,'cllsupport/posts')]"
+		# view_all_xpath='//*[@id="community-posts-panel"]/div/a'
+		# view_all_xpath='//a[contains(@itemprop,"url")]'
+		# driver.find_element_by_xpath(view_all_xpath).click()
+		# jsres = driver.execute_script('return arguments[0].DataTable().data();', element)
+		# print(jsres)
+		# time.sleep(4)
 		get_url = str(driver.current_url)
 		get_url = get_url.split("/")
 		get_url = get_url[3]
+		logging.info(">>>> "+get_url)
 		runable = True
 		counter = 1
 		driver.close()
@@ -54,7 +75,7 @@ class HealthUnlocked(scrapy.Spider):
 			yield scrapy.Request(url,callback=self.get_sub_data)
 
 	def get_sub_data(self,response):
-
+		condition ="chronic lymphocytic leukemia"
 		response_url = str(response.url)
 		response_data_splitted = response_url.split("/")
 		post_id = response_data_splitted[5]
@@ -78,10 +99,10 @@ class HealthUnlocked(scrapy.Spider):
 		item = PostItemsList()
 		item['author'] = author_username
 		item['author_link'] = author_link
-		item['condition']="chronic lymphocytic leukemia"
-		item['create_date'] = posted_date
+		item['condition']=condition
+		item['create_date'] = self.getDate(posted_date)
 		item['post'] = author_all_text
 		item['topic'] = topic
 		item['url'] = response.url
-		
+		logging.info(author_all_text)
 		yield item

@@ -1,11 +1,15 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
 import re
-import logging
+import logging, dateparser, time
 from bs4 import BeautifulSoup
+import string
+import dateparser,time
+
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -51,6 +55,17 @@ class ForumsSpider(CrawlSpider):
             ), callback='parsePost', follow=True),
         )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+
     # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
     # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
     def parsePost(self,response):
@@ -63,13 +78,16 @@ class ForumsSpider(CrawlSpider):
         url = response.url
 
         item = PostItemsList()
-        item['author'] = self.parseText(str=sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a').extract()[0].strip())
+        item['author'] = self.cleanText(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a').extract()[0])
         item['author_link']=response.urljoin(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/a/@href').extract()[0])
         item['condition']=condition
-        item['create_date'] = self.parseText(sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/text()').extract()[1].split('\n')[1].strip()[1:])
-        post_msg=self.parseText(str=sel.css('.content-primary-post').xpath('./div[2]/p').extract()[0])
+
+        create_date = self.cleanText(re.sub(r'\s+\d+\s+(reply|replies)','',sel.css('.content-primary-post').xpath('./div[1]/ul/li[1]/text()').extract()[1]))
+        item['create_date'] = self.getDate(create_date)
+
+        post_msg=self.cleanText(sel.css('.content-primary-post').xpath('./div[2]/p').extract()[0])
         item['post']=post_msg
-        item['tag']=''
+        # item['tag']=''
         item['topic'] = topic
         item['url']=url
         logging.info(post_msg)
@@ -79,19 +97,26 @@ class ForumsSpider(CrawlSpider):
             if len(post.css('.post-info'))==0:
                 continue
             item = PostItemsList()
-            item['author'] = self.parseText(str=post.css('.post-info').xpath('./ul/li[1]/a').extract()[0].strip())
+            item['author'] = self.cleanText( post.css('.post-info').xpath('./ul/li[1]/a').extract()[0].strip())
             item['author_link']=response.urljoin(post.css('.post-info').xpath('./ul/li[1]/a/@href').extract()[0])
             item['condition']=condition
-            item['create_date'] = self.parseText(str=post.css('.post-info').xpath('./ul/li[3]').extract()[0])
-            post_msg=self.parseText(str=post.xpath('./p').extract()[0])
+
+            create_date = self.cleanText(re.sub(r'\s+\d+\s+(reply|replies)','',post.css('.post-info').xpath('./ul/li[3]').extract()[0]))
+            item['create_date'] = self.getDate(create_date)
+
+            post_msg=self.cleanText(post.xpath('./p').extract()[0])
             item['post']=post_msg
-            item['tag']=''
+            # item['tag']=''
             item['topic'] = topic
             item['url']=url
             logging.info(post_msg)
             items.append(item)
         return items
 
-    def parseText(self, str):
-        soup = BeautifulSoup(str, 'html.parser')
-        return re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+    def cleanText(self,text,printableOnly=True):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if printableOnly:
+            return filter(lambda x: x in string.printable, text)
+        return text

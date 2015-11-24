@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 from bs4 import BeautifulSoup
 import logging
+import string
+import dateparser
+import time
 
 ## LOGGING to file
 #import logging
@@ -29,21 +33,32 @@ class ForumsSpider(CrawlSpider):
             # configuration pages that aren't scrapeable (and are mostly redundant anyway)
             Rule(LinkExtractor(
                     restrict_xpaths='//a[contains(@href,"topic")]',
-                    canonicalize=True,
+                    canonicalize=False,
                 ), callback='parsePostsList'),
             # Rule to follow arrow to next product grid
             Rule(LinkExtractor(
                     restrict_xpaths='//a[contains(@href,"forum")]',
-                    canonicalize=True,
+                    canonicalize=False,
                     deny=(r'memuser_profile_*\.html',)
                 ), follow=True),
             Rule(LinkExtractor(
                     restrict_xpaths='//a[@class="pageLink"]',
-                    canonicalize=True,
+                    canonicalize=False,
                     deny=(r'memuser_profile_*\.html',)
                 ), follow=True),
         )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
     def cleanText(self,text):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
@@ -63,20 +78,22 @@ class ForumsSpider(CrawlSpider):
         #for post in posts:
         author = sel.xpath('//span[contains(@id, "userProfile")]/text()').extract()
         author_link = sel.xpath('//div[@class="dropDownMenu"]/a[contains(@href,"member")]/@href').extract()
-        condition = condition
-        create_date= sel.xpath('//td[contains(@class,"TableTop")]/text()').extract()
+        create_date = [self.cleanText(x.replace("Posted:","")) for x in sel.xpath('//td[contains(@class,"TableTop")]/text()').extract()]
+        create_date = [x for x in create_date if x!='']
+        # create_date1= sel.xpath('//td[contains(@class,"msgOddTableTop")]/text()').extract()
+        # create_date2= sel.xpath('//td[contains(@class,"msgEvenTableTop")]/text()').extract()
+        # create_date = [self.cleanText(x) for x in zip(create_date1,create_date2)]
         message = sel.xpath('//div[@class="msgBody"]//text()').extract()
 
         for i in range(len(author)):
             item = PostItemsList()
             item['author'] = author[i]
-            item['author_link'] = author_link[i]
+            item['author_link'] = re.sub(r'\&SID=\w+$','',author_link[i])
             item['condition'] = condition
-            item['create_date'] = self.cleanText(create_date[i])    
+            item['create_date'] = self.getDate(create_date[i]) #self.cleanText(create_date[i])    
             item['post'] = self.cleanText(message[i])
-            item['tag']=''
+            # item['tag']=''
             item['topic'] = topic
             item['url']=url            
-            logging.info(item.__str__)
             items.append(item)
         return items

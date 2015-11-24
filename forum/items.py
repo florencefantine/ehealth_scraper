@@ -12,6 +12,7 @@ class PostItemsList(scrapy.Item):
     author = scrapy.Field()
     author_link = scrapy.Field()
     create_date = scrapy.Field()
+    message = scrapy.Field()
     post = scrapy.Field()
     topic=scrapy.Field()
     tag=scrapy.Field()

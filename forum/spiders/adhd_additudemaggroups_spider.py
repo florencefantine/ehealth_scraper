@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import scrapy
+import string
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
@@ -6,6 +8,9 @@ from forum.items import PostItemsList
 import re
 from bs4 import BeautifulSoup
 import logging
+import string
+import dateparser
+import time
 
 ## LOGGING to file
 #import logging
@@ -39,14 +44,27 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
-    def cleanText(self,text):
+    def cleanText(self,text,printableOnly = True):
         soup = BeautifulSoup(text,'html.parser')
         text = soup.get_text();
         text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
-        return text 
+        if printableOnly:
+            return filter(lambda x: x in string.printable, text)
+        return text
 
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
+
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
+    # http://connect.additudemag.com/groups/topic/Best_advise_for_son_dealing_with_depression/
     def parsePostsList(self,response):
         sel = Selector(response)
         #posts = sel.css(".vt_post_holder")
@@ -56,34 +74,33 @@ class ForumsSpider(CrawlSpider):
         url = response.url
         condition="adhd"
             
-        item = PostItemsList()
-        item['author'] = sel.xpath('.//span[@class="post-meta"]//a/text()').extract_first()
-        item['author_link'] = sel.xpath('.//span[@class="post-meta"]//a/@href').extract_first()
-        item['condition'] = condition
+        author = sel.xpath('.//span[@class="post-meta"]//a/text()').extract_first()
+        author_link = sel.xpath('.//span[@class="post-meta"]//a/@href').extract_first()
         create_date = ''.join(sel.xpath('.//span[@class="post-meta"]/text()').extract()).replace("Posted by","").replace("to","")
-        item['create_date']= self.cleanText(create_date) 
-        
-        message = ''.join(sel.xpath('.//div[@class="blog-post"]/p/text()').extract())
-        item['post'] = self.cleanText(message)
-        item['tag']='adhd'
-        item['topic'] = topic
-        item['url']=url
-        logging.info(item.__str__)
-        items.append(item)
 
-        for post in posts:
+        if author and author_link and create_date!='':
             item = PostItemsList()
-            item['author'] = post.xpath('.//span[@class="comment-meta"]//a[0]/text()').extract()
-            item['author_link'] = post.xpath('.//span[@class="comment-meta"]//a[0]/@href').extract()
+            item['author'] = author
+            item['author_link'] = author_link
             item['condition'] = condition
-            create_date = ''.join(post.xpath('.//span[@class="comment-meta"]/text()').extract()).replace("Posted by","").replace("to","")
-            item['create_date']= self.cleanText(create_date) 
-            
-            message = ''.join(post.xpath('.//div[@class="comment-text"]/text()').extract())
-            item['post'] = self.cleanText(message)
-            item['tag']='adhd'
+            item['create_date']= self.getDate(self.cleanText(create_date.replace("|","").replace("on","").replace("at","")))
+            item['post'] = self.cleanText(''.join(sel.xpath('.//div[@class="blog-post"]/p/text()').extract()))
             item['topic'] = topic
             item['url']=url
-            logging.info(item.__str__)
             items.append(item)
+
+        for post in posts:
+            author = post.xpath('.//span[@class="comment-meta"]//a[0]/text()').extract()
+            author_link = post.xpath('.//span[@class="comment-meta"]//a[0]/@href').extract()
+            create_date = self.cleanText(''.join(post.xpath('.//span[@class="comment-meta"]/text()').extract()).replace("|","").replace("on","").replace("at",""))
+            if author and author_link and create_date!='':
+                item = PostItemsList()
+                item['author'] = author
+                item['author_link'] = author_link
+                item['condition'] = condition
+                item['create_date']= self.getDate(create_date)
+                item['post'] = self.cleanText(message = ''.join(post.xpath('.//div[@class="comment-text"]/text()').extract()))
+                item['topic'] = topic
+                item['url']=url
+                items.append(item)
         return items

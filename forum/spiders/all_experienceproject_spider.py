@@ -1,10 +1,16 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 from scrapy.selector import Selector
 from forum.items import PostItemsList
 import re
+from bs4 import BeautifulSoup
 import logging
+import string
+import time
+import dateparser
+import time
 
 class ForumsSpider(CrawlSpider):
     name = "all_experienceproject_spider"
@@ -26,6 +32,37 @@ class ForumsSpider(CrawlSpider):
             #    ), follow=True),
         )
 
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
+    # def getDate(self,date_str):
+    #     result1 = re.compile(r"^[a-zA-Z][a-zA-Z][a-zA-Z]\s\d+$").match(date_str)
+    #     result2=re.compile(r"^\d+\s(hours|hrs) ago").match(date_str)
+    #     if result1:
+    #         return date_str+", 2015"
+    #     elif result2:
+    #         return time.strftime("%b %d, %Y")
+    #     else:
+    #         return date_str
+
+
+    def cleanText(self,text,printableOnly=True):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("( +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
+        return text 
+
+
     def parsePostsList(self,response):
         sel = Selector(response)
         posts = sel.xpath('//div[@class="expression  titled-story-expression  story-expression  is-link "]/div[@class="expression-content"]')
@@ -38,15 +75,11 @@ class ForumsSpider(CrawlSpider):
             item['author'] = post.xpath('.//span[@class="member-username-with-status"]/a[@class="member-username  profile-hoverlay-enabled"]/text()').extract_first()
             if item['author']:
                 item['author_link'] = post.xpath('.//span[@class="member-username-with-status"]/a[@class="member-username  profile-hoverlay-enabled"]/@href').extract_first()
-                item['create_date'] = post.xpath('.//span[@class="date"]/span[@class="model-create-date"]/text()').extract_first().strip()
-          
-                item1 = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="content"]/h2/a/text()').extract()).replace("\t","").replace("\n","").replace("\r","").replace(u'\xa0',''))
-                item2 = re.sub('\s+',' '," ".join(post.xpath('.//div[@class="content"]/span/text()').extract()).replace("\t","").replace("\n","").replace("\r","").replace(u'\xa0',''))
-
+                item['create_date'] =self.getDate(" ".join(post.xpath('.//span[@class="date"]/span[@class="model-create-date"]/text()').extract()).strip())
+                item1 = self.cleanText(" ".join(post.xpath('.//div[@class="content"]/h2/a/text()').extract()))
+                item2 = self.cleanText(" ".join(post.xpath('.//div[@class="content"]/span/text()').extract()))
                 item['post'] = item1 + ' ' + item2
-                item['tag']=''
-                item['topic'] = topic.strip()
+                item['topic'] = self.cleanText(topic)
                 item['url']=url
-                logging.info(item.__str__)
                 items.append(item)
         return items

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
@@ -6,6 +7,9 @@ from forum.items import PostItemsList
 import re
 import logging
 from bs4 import BeautifulSoup
+import string
+import dateparser
+import time
 # import lxml.html
 # from lxml.etree import ParserError
 # from lxml.cssselect import CSSSelector
@@ -46,8 +50,25 @@ class ForumsSpider(CrawlSpider):
                 ), follow=True),
         )
 
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/spiders/dmoz.py
-    # https://github.com/scrapy/dirbot/blob/master/dirbot/pipelines.py
+    def getDate(self,date_str):
+        # date_str="Fri Feb 12, 2010 1:54 pm"
+        try:
+            date = dateparser.parse(date_str)
+            epoch = int(date.strftime('%s'))
+            create_date = time.strftime("%Y-%m-%d'T'%H:%M%S%z",  time.gmtime(epoch))
+            return create_date
+        except Exception:
+            #logging.error(">>>>>"+date_str)
+            return date_str
+            
+    def cleanText(self,text,printableOnly=True):
+        soup = BeautifulSoup(text,'html.parser')
+        text = soup.get_text();
+        text = re.sub("(-+| +|\n|\r|\t|\0|\x0b|\xa0|\xbb|\xab)+",' ',text).strip()
+        if(printableOnly):
+            return filter(lambda x: x in string.printable, text)
+        return text 
+
     def parsePost(self,response):
         logging.info(response)
         sel = Selector(response)
@@ -69,15 +90,13 @@ class ForumsSpider(CrawlSpider):
         date = post.css('.first_posted_fmt').extract()[0]
         date = date[date.find('DateDelta')+11:date.rfind("'")]
         item['condition'] = condition
-        item['create_date'] = date
-        post_msg=post.css('.post_fmt').extract()[0]
-        soup = BeautifulSoup(post_msg, 'html.parser')
-        post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
-        item['post']=post_msg
-        item['tag']=''
+        item['create_date'] = self.getDate(date)
+        # soup = BeautifulSoup(post_msg, 'html.parser')
+        # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+        item['post']=self.cleanText(post.css('.post_fmt').extract()[0])
+        # item['tag']=''
         item['topic'] = topic
         item['url']=url
-        logging.info(post_msg)
         items.append(item)
 
         for post in posts:
@@ -93,14 +112,12 @@ class ForumsSpider(CrawlSpider):
             date = post.css('.posted_fmt').extract()[0]
             date = date[date.find('DateDelta')+11:date.rfind("'")]
             item['condition'] = condition
-            item['create_date'] = date
-            post_msg=post.css('.post_fmt').extract()[0]
-            soup = BeautifulSoup(post_msg, 'html.parser')
-            post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
-            item['post']=post_msg
-            item['tag']='hiv'
+            item['create_date'] = self.getDate(date)
+            # soup = BeautifulSoup(post_msg, 'html.parser')
+            # post_msg = re.sub(" +|\n|\r|\t|\0|\x0b|\xa0",' ',soup.get_text()).strip()
+            item['post']=self.cleanText(post.css('.post_fmt').extract()[0])
+            # item['tag']='hiv'
             item['topic'] = topic
             item['url']=url
-            logging.info(post_msg)
             items.append(item)
         return items
